@@ -37,10 +37,12 @@ public class SpecialEnderChest extends InventorySubcontainer implements IInvento
 
     private final InventoryEnderChest enderChest;
     private final CraftInventory inventory = new CraftInventory(this);
-    public boolean playerOnline = false;
+    private boolean playerOnline = false;
 
     public SpecialEnderChest(Player player, Boolean online) {
-        super(((CraftPlayer) player).getHandle().getEnderChest().getName(), ((CraftPlayer) player).getHandle().getEnderChest().hasCustomName(), ((CraftPlayer) player).getHandle().getEnderChest().getSize());
+        super(((CraftPlayer) player).getHandle().getEnderChest().getName(),
+                ((CraftPlayer) player).getHandle().getEnderChest().hasCustomName(),
+                ((CraftPlayer) player).getHandle().getEnderChest().getSize());
         CraftPlayer craftPlayer = (CraftPlayer) player;
         this.enderChest = craftPlayer.getHandle().getEnderChest();
         this.bukkitOwner = craftPlayer;
@@ -79,8 +81,7 @@ public class SpecialEnderChest extends InventorySubcontainer implements IInvento
                 this.bukkitOwner = player;
                 CraftPlayer craftPlayer = (CraftPlayer) player;
                 setItemArrays(craftPlayer.getHandle().getEnderChest(), this.items);
-            }
-            catch (Exception e) {}
+            } catch (Exception e) {}
             playerOnline = true;
         }
     }

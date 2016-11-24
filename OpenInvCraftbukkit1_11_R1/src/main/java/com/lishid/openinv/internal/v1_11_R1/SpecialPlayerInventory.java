@@ -187,8 +187,8 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
         if (list != null && !list.get(i).isEmpty()) {
             ItemStack itemstack = list.get(i);
 
-             list.set(i, ItemStack.a);
-             return itemstack;
+            list.set(i, ItemStack.a);
+            return itemstack;
         }
 
         return ItemStack.a;
@@ -218,28 +218,31 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
         }
 
         if (list != null) {
-             list.set(i, itemstack);
+            list.set(i, itemstack);
         }
     }
 
     private int getReversedItemSlotNum(int i) {
-        if (i >= 27)
+        if (i >= 27) {
             return i - 27;
-        else
-            return i + 9;
+        }
+        return i + 9;
     }
 
     private int getReversedArmorSlotNum(int i) {
-        if (i == 0)
+        if (i == 0) {
             return 3;
-        if (i == 1)
+        }
+        if (i == 1) {
             return 2;
-        if (i == 2)
+        }
+        if (i == 2) {
             return 1;
-        if (i == 3)
+        }
+        if (i == 3) {
             return 0;
-        else
-            return i;
+        }
+        return i;
     }
 
     @Override
@@ -254,4 +257,5 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
     public boolean a(EntityHuman entityhuman) {
         return true;
     }
+
 }

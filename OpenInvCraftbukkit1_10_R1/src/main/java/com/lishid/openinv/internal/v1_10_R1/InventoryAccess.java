@@ -40,9 +40,7 @@ public class InventoryAccess implements IInventoryAccess {
             if (!OpenInv.hasPermission(player, Permissions.PERM_EDITINV)) {
                 return false;
             }
-        }
-
-        else if (inv instanceof SpecialEnderChest) {
+        } else if (inv instanceof SpecialEnderChest) {
             if (!OpenInv.hasPermission(player, Permissions.PERM_EDITENDER)) {
                 return false;
             }

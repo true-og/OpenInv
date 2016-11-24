@@ -41,11 +41,13 @@ import net.minecraft.server.v1_11_R1.EnumDirection;
 import net.minecraft.server.v1_11_R1.IBlockData;
 import net.minecraft.server.v1_11_R1.IInventory;
 import net.minecraft.server.v1_11_R1.ITileInventory;
+import net.minecraft.server.v1_11_R1.InventoryEnderChest;
 import net.minecraft.server.v1_11_R1.InventoryLargeChest;
 import net.minecraft.server.v1_11_R1.PacketPlayOutOpenWindow;
 import net.minecraft.server.v1_11_R1.StatisticList;
 import net.minecraft.server.v1_11_R1.TileEntity;
 import net.minecraft.server.v1_11_R1.TileEntityChest;
+import net.minecraft.server.v1_11_R1.TileEntityEnderChest;
 import net.minecraft.server.v1_11_R1.TileEntityShulkerBox;
 import net.minecraft.server.v1_11_R1.World;
 
@@ -63,125 +65,10 @@ public class AnySilentContainer implements IAnySilentContainer {
     }
 
     @Override
-    public boolean activateContainer(Player p, boolean silentchest, int x, int y, int z) {
-
-        // TODO backport to all modules? TODO change new API to activateContainer(Player, Block)? Use BlockState instead?
-        if (silentchest && p.getWorld().getBlockAt(x, y, z).getType() == Material.ENDER_CHEST) {
-            p.openInventory(p.getEnderChest());
-            return true;
-        }
-
-        EntityPlayer player = ((CraftPlayer) p).getHandle();
-        final World world = player.world;
-        final BlockPosition blockPosition = new BlockPosition(x, y, z);
-        Object tile = world.getTileEntity(blockPosition);
-
-        if (tile == null) {
-            return false;
-        }
-
-        Block block = world.getType(blockPosition).getBlock();
-        Container container = null;
-
-        if (block instanceof BlockChest) {
-            BlockChest blockChest = (BlockChest) block;
-
-            for (EnumDirection enumDirection : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
-                BlockPosition localBlockPosition = blockPosition.shift(enumDirection);
-                Block localBlock = world.getType(localBlockPosition).getBlock();
-
-                if (localBlock != block) {
-                    continue;
-                }
-
-                TileEntity localTileEntity = world.getTileEntity(localBlockPosition);
-                if (!(localTileEntity instanceof TileEntityChest)) {
-                    continue;
-                }
-
-                if ((enumDirection == EnumDirection.WEST) || (enumDirection == EnumDirection.NORTH)) {
-                    tile = new InventoryLargeChest("container.chestDouble",
-                            (TileEntityChest) localTileEntity, (ITileInventory) tile);
-                } else {
-                    tile = new InventoryLargeChest("container.chestDouble",
-                            (ITileInventory) tile, (TileEntityChest) localTileEntity);
-                }
-                break;
-            }
-
-            if (blockChest.g == Type.BASIC)
-                player.b(StatisticList.ac);
-            else if (blockChest.g == Type.TRAP) {
-                player.b(StatisticList.W);
-            }
-
-            if (silentchest) {
-                container = new SilentContainerChest(player.inventory, ((IInventory) tile), player);
-            }
-        }
-
-        if (block instanceof BlockShulkerBox) {
-            player.b(StatisticList.ae);
-
-            if (silentchest && tile instanceof TileEntityShulkerBox) {
-                // Set value to current + 1. Ensures consistency later when resetting.
-                SilentContainerShulkerBox.setOpenValue((TileEntityShulkerBox) tile,
-                        SilentContainerShulkerBox.getOpenValue((TileEntityShulkerBox) tile) + 1);
-
-                container = new SilentContainerShulkerBox(player.inventory, (IInventory) tile, player);
-            }
-        }
-
-        if (!(tile instanceof IInventory)) {
-            // TODO anyenderchest
-            p.sendMessage(ChatColor.RED + "Unhandled non-IInventory for block!");
-            return false;
-        }
-
-        boolean returnValue = false;
-        final IInventory iInventory = (IInventory) tile;
-
-        if (!silentchest || container == null) {
-            player.openContainer(iInventory);
-            returnValue = true;
-        } else {
-            try {
-                int windowId = player.nextContainerCounter();
-                player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(windowId, iInventory.getName(), iInventory.getScoreboardDisplayName(), iInventory.getSize()));
-                player.activeContainer = container;
-                player.activeContainer.windowId = windowId;
-                player.activeContainer.addSlotListener(player);
-                returnValue = true;
-                if (tile instanceof TileEntityShulkerBox) {
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            // TODO hacky
-                            Object tile = world.getTileEntity(blockPosition);
-                            if (!(tile instanceof TileEntityShulkerBox)) {
-                                return;
-                            }
-                            TileEntityShulkerBox box = (TileEntityShulkerBox) tile;
-                            // Reset back - we added 1, and calling TileEntityShulkerBox#startOpen adds 1 more.
-                            SilentContainerShulkerBox.setOpenValue(box,
-                                    SilentContainerShulkerBox.getOpenValue((TileEntityShulkerBox) tile) - 2);
-                        }
-                    }.runTaskLater(Bukkit.getPluginManager().getPlugin("OpenInv"), 2);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                p.sendMessage(ChatColor.RED + "Error while sending silent chest.");
-            }
-        }
-
-        return returnValue;
-    }
-
-    @Override
-    public boolean isAnyContainerNeeded(Player p, int x, int y, int z) {
+    public boolean isAnyContainerNeeded(Player p, org.bukkit.block.Block b) {
         EntityPlayer player = ((CraftPlayer) p).getHandle();
         World world = player.world;
-        BlockPosition blockPosition = new BlockPosition(x, y, z);
+        BlockPosition blockPosition = new BlockPosition(b.getX(), b.getY(), b.getZ());
         Block block = world.getType(blockPosition).getBlock();
 
         if (block instanceof BlockShulkerBox) {
@@ -190,7 +77,7 @@ public class AnySilentContainer implements IAnySilentContainer {
 
         if (block instanceof BlockEnderChest) {
             // Ender chests are not blocked by ocelots.
-            return world.getType(new BlockPosition(x, y + 1, z)).m();
+            return world.getType(blockPosition.up()).m();
         }
 
         // Check if chest is blocked or has an ocelot on top
@@ -262,22 +149,146 @@ public class AnySilentContainer implements IAnySilentContainer {
         return false;
     }
 
+    @Override
+    public boolean activateContainer(Player p, boolean silentchest, org.bukkit.block.Block b) {
+
+        EntityPlayer player = ((CraftPlayer) p).getHandle();
+
+        // Silent ender chest is pretty much API-only
+        if (silentchest && b.getType() == Material.ENDER_CHEST) {
+            p.openInventory(p.getEnderChest());
+            player.b(StatisticList.X);
+            return true;
+        }
+
+        final World world = player.world;
+        final BlockPosition blockPosition = new BlockPosition(b.getX(), b.getY(), b.getZ());
+        Object tile = world.getTileEntity(blockPosition);
+
+        if (tile == null) {
+            return false;
+        }
+
+        if (tile instanceof TileEntityEnderChest) {
+            // Anychest ender chest.  See net.minecraft.server.BlockEnderChest
+            InventoryEnderChest enderChest = player.getEnderChest();
+            enderChest.a((TileEntityEnderChest) tile);
+            player.openContainer(enderChest);
+            player.b(StatisticList.X);
+            return true;
+        }
+
+        if (!(tile instanceof IInventory)) {
+            return false;
+        }
+
+        Block block = world.getType(blockPosition).getBlock();
+        Container container = null;
+
+        if (block instanceof BlockChest) {
+            BlockChest blockChest = (BlockChest) block;
+
+            for (EnumDirection localEnumDirection : EnumDirection.EnumDirectionLimit.HORIZONTAL) {
+                BlockPosition localBlockPosition = blockPosition.shift(localEnumDirection);
+                Block localBlock = world.getType(localBlockPosition).getBlock();
+
+                if (localBlock != block) {
+                    continue;
+                }
+
+                TileEntity localTileEntity = world.getTileEntity(localBlockPosition);
+                if (!(localTileEntity instanceof TileEntityChest)) {
+                    continue;
+                }
+
+                if ((localEnumDirection == EnumDirection.WEST) || (localEnumDirection == EnumDirection.NORTH)) {
+                    tile = new InventoryLargeChest("container.chestDouble",
+                            (TileEntityChest) localTileEntity, (ITileInventory) tile);
+                } else {
+                    tile = new InventoryLargeChest("container.chestDouble",
+                            (ITileInventory) tile, (TileEntityChest) localTileEntity);
+                }
+                break;
+            }
+
+            if (blockChest.g == Type.BASIC)
+                player.b(StatisticList.ac);
+            else if (blockChest.g == Type.TRAP) {
+                player.b(StatisticList.W);
+            }
+
+            if (silentchest) {
+                container = new SilentContainerChest(player.inventory, ((IInventory) tile), player);
+            }
+        }
+
+        if (block instanceof BlockShulkerBox) {
+            player.b(StatisticList.ae);
+
+            if (silentchest && tile instanceof TileEntityShulkerBox) {
+                // Set value to current + 1. Ensures consistency later when resetting.
+                SilentContainerShulkerBox.setOpenValue((TileEntityShulkerBox) tile,
+                        SilentContainerShulkerBox.getOpenValue((TileEntityShulkerBox) tile) + 1);
+
+                container = new SilentContainerShulkerBox(player.inventory, (IInventory) tile, player);
+            }
+        }
+
+        boolean returnValue = false;
+        final IInventory iInventory = (IInventory) tile;
+
+        if (!silentchest || container == null) {
+            player.openContainer(iInventory);
+            returnValue = true;
+        } else {
+            try {
+                int windowId = player.nextContainerCounter();
+                player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(windowId, iInventory.getName(), iInventory.getScoreboardDisplayName(), iInventory.getSize()));
+                player.activeContainer = container;
+                player.activeContainer.windowId = windowId;
+                player.activeContainer.addSlotListener(player);
+                returnValue = true;
+                if (tile instanceof TileEntityShulkerBox) {
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            // TODO hacky
+                            Object tile = world.getTileEntity(blockPosition);
+                            if (!(tile instanceof TileEntityShulkerBox)) {
+                                return;
+                            }
+                            TileEntityShulkerBox box = (TileEntityShulkerBox) tile;
+                            // Reset back - we added 1, and calling TileEntityShulkerBox#startOpen adds 1 more.
+                            SilentContainerShulkerBox.setOpenValue(box,
+                                    SilentContainerShulkerBox.getOpenValue((TileEntityShulkerBox) tile) - 2);
+                        }
+                    }.runTaskLater(Bukkit.getPluginManager().getPlugin("OpenInv"), 2);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                p.sendMessage(ChatColor.RED + "Error while sending silent chest.");
+            }
+        }
+
+        return returnValue;
+    }
+
     /**
      * @deprecated Use {@link #activateContainer(Player, boolean, boolean, int, int, int)}.
      */
     @Deprecated
     @Override
     public boolean activateChest(Player player, boolean anychest, boolean silentchest, int x, int y, int z) {
-        return !activateContainer(player, silentchest, x, y, z);
+        return !activateContainer(player, silentchest, player.getWorld().getBlockAt(x, y, z));
     }
 
     /**
-     * @deprecated Use {@link #isAnyContainerNeeded(Player, int, int, int)}.
+     * @deprecated Use {@link #isAnyContainerNeeded(Player, org.bukkit.block.Block)}.
      */
     @Deprecated
     @Override
     public boolean isAnyChestNeeded(Player player, int x, int y, int z) {
-        return isAnyContainerNeeded(player, x, y, z);
+        return isAnyContainerNeeded(player, player.getWorld().getBlockAt(x, y, z));
     }
 
 }

@@ -11,14 +11,29 @@ import net.minecraft.server.v1_11_R1.TileEntityShulkerBox;
 
 public class SilentContainerShulkerBox extends ContainerShulkerBox {
 
-    private static Field h;
+    private static Field fieldShulkerActionData;
+
+    public SilentContainerShulkerBox(PlayerInventory playerInventory, IInventory iInventory,
+            EntityHuman entityHuman) {
+        super(playerInventory, iInventory, entityHuman);
+    }
+
+    @Override
+    public void b(EntityHuman entityHuman) {
+        PlayerInventory playerinventory = entityHuman.inventory;
+
+        if (!playerinventory.getCarried().isEmpty()) {
+            entityHuman.drop(playerinventory.getCarried(), false);
+            playerinventory.setCarried(ItemStack.a);
+        }
+    }
 
     private static Field exposeOpenStatus() throws NoSuchFieldException, SecurityException {
-        if (h == null) {
-            h = TileEntityShulkerBox.class.getDeclaredField("h");
-            h.setAccessible(true);
+        if (fieldShulkerActionData == null) {
+            fieldShulkerActionData = TileEntityShulkerBox.class.getDeclaredField("fieldShulkerActionData");
+            fieldShulkerActionData.setAccessible(true);
         }
-        return h;
+        return fieldShulkerActionData;
     }
 
     public static void setOpenValue(TileEntityShulkerBox tileShulkerBox, Object value) {
@@ -35,21 +50,6 @@ public class SilentContainerShulkerBox extends ContainerShulkerBox {
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
-        }
-    }
-
-    public SilentContainerShulkerBox(PlayerInventory playerInventory, IInventory iInventory,
-            EntityHuman entityHuman) {
-        super(playerInventory, iInventory, entityHuman);
-    }
-
-    @Override
-    public void b(EntityHuman entityHuman) {
-        PlayerInventory playerinventory = entityHuman.inventory;
-
-        if (!playerinventory.getCarried().isEmpty()) {
-            entityHuman.drop(playerinventory.getCarried(), false);
-            playerinventory.setCarried(ItemStack.a);
         }
     }
 

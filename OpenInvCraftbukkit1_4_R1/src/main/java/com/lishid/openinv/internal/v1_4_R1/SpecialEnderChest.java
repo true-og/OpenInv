@@ -41,13 +41,14 @@ public class SpecialEnderChest extends InventorySubcontainer implements IInvento
 
     private final InventoryEnderChest enderChest;
     private final CraftInventory inventory = new CraftInventory(this);
-    public List<HumanEntity> transaction = new ArrayList<HumanEntity>();
-    public boolean playerOnline = false;
+    private final List<HumanEntity> transaction = new ArrayList<HumanEntity>();
+    private boolean playerOnline = false;
     private CraftPlayer owner;
     private int maxStack = MAX_STACK;
 
     public SpecialEnderChest(Player p, Boolean online) {
-        super(((CraftPlayer) p).getHandle().getEnderChest().getName(), ((CraftPlayer) p).getHandle().getEnderChest().getSize());
+        super(((CraftPlayer) p).getHandle().getEnderChest().getName(),
+                ((CraftPlayer) p).getHandle().getEnderChest().getSize());
         CraftPlayer player = (CraftPlayer) p;
         this.enderChest = player.getHandle().getEnderChest();
         this.owner = player;
@@ -68,8 +69,7 @@ public class SpecialEnderChest extends InventorySubcontainer implements IInvento
                 Field field = playerEnderChest.getClass().getField("items");
                 field.setAccessible(true);
                 field.set(playerEnderChest, this.items);
-            }
-            catch (Exception e) {}
+            } catch (Exception e) {}
             playerOnline = true;
         }
     }

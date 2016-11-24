@@ -54,10 +54,7 @@ public class OpenInvPlayerListener implements Listener {
 
         Player player = event.getPlayer();
         boolean anychest = OpenInv.hasPermission(player, Permissions.PERM_ANYCHEST) && plugin.getPlayerAnyChestStatus(player);
-        int x = event.getClickedBlock().getX();
-        int y = event.getClickedBlock().getY();
-        int z = event.getClickedBlock().getZ();
-        boolean needsAnyChest = plugin.getAnySilentContainer().isAnyContainerNeeded(player, x, y, z);
+        boolean needsAnyChest = plugin.getAnySilentContainer().isAnyContainerNeeded(player, event.getClickedBlock());
 
         if (!anychest && needsAnyChest) {
             return;
@@ -65,17 +62,8 @@ public class OpenInvPlayerListener implements Listener {
 
         boolean silentchest = OpenInv.hasPermission(player, Permissions.PERM_SILENT) && plugin.getPlayerSilentChestStatus(player);
 
-        if (event.getClickedBlock().getType() == org.bukkit.Material.ENDER_CHEST) {
-            if (silentchest || anychest) {
-                // TODO: anychest is silent
-                event.setCancelled(true);
-                player.openInventory(player.getEnderChest());
-            }
-            return;
-        }
-
         // If anychest or silentchest is active
-        if ((anychest || silentchest) && plugin.getAnySilentContainer().activateContainer(player, silentchest, x, y, z)) {
+        if ((anychest || silentchest) && plugin.getAnySilentContainer().activateContainer(player, silentchest, event.getClickedBlock())) {
             if (silentchest && plugin.notifySilentChest() && needsAnyChest && plugin.notifyAnyChest()) {
                 player.sendMessage("You are opening a blocked chest silently.");
             } else if (silentchest && plugin.notifySilentChest()) {

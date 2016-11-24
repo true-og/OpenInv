@@ -28,7 +28,7 @@ public class SilentContainerChest extends ContainerChest {
     public SilentContainerChest(PlayerInventory playerInventory, IInventory iInventory,
             EntityHuman entityHuman) {
         super(playerInventory, iInventory, entityHuman);
-        // close signal
+        // Send close signal
         iInventory.closeContainer(entityHuman);
     }
 
@@ -43,4 +43,5 @@ public class SilentContainerChest extends ContainerChest {
             entityHuman.drop(carried, false);
         }
     }
+
 }

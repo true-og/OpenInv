@@ -31,6 +31,7 @@ import net.minecraft.server.v1_7_R4.IInventory;
 import org.bukkit.craftbukkit.v1_7_R4.inventory.CraftInventory;
 
 public class InventoryAccess implements IInventoryAccess {
+
     @Override
     public boolean check(Inventory inventory, HumanEntity player) {
         IInventory inv = grabInventory(inventory);
@@ -39,9 +40,7 @@ public class InventoryAccess implements IInventoryAccess {
             if (!OpenInv.hasPermission(player, Permissions.PERM_EDITINV)) {
                 return false;
             }
-        }
-
-        else if (inv instanceof SpecialEnderChest) {
+        } else if (inv instanceof SpecialEnderChest) {
             if (!OpenInv.hasPermission(player, Permissions.PERM_EDITENDER)) {
                 return false;
             }
@@ -70,4 +69,5 @@ public class InventoryAccess implements IInventoryAccess {
         }
         return result;
     }
+
 }

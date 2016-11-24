@@ -69,4 +69,5 @@ public class InventoryAccess implements IInventoryAccess {
         }
         return result;
     }
+
 }

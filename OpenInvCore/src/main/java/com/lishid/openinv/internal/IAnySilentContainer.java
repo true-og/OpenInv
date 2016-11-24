@@ -15,28 +15,24 @@ public interface IAnySilentContainer extends IAnySilentChest {
     public boolean isAnySilentContainer(Block block);
 
     /**
+     * Checks if the container at the given coordinates is blocked.
+     * 
+     * @param player the Player opening the container
+     * @param block the Block
+     * @return true if the container is blocked
+     */
+    public boolean isAnyContainerNeeded(Player player, Block block);
+
+    /**
      * Opens the container at the given coordinates for the Player. If you do not want blocked
-     * containers to open, be sure to check {@link #isAnyContainerNeeded(Player, int, int, int)}
+     * containers to open, be sure to check {@link #isAnyContainerNeeded(Player, Block)}
      * first.
      * 
      * @param player
      * @param silentchest whether the container's noise is to be silenced
-     * @param x the x coordinate
-     * @param y the y coordinate
-     * @param z the z coordinate
+     * @param block the Block
      * @return true if the container can be opened
      */
-    public boolean activateContainer(Player player, boolean silentchest, int x, int y, int z);
-
-    /**
-     * Checks if the container at the given coordinates is blocked.
-     * 
-     * @param player the Player opening the container
-     * @param x the x coordinate
-     * @param y the y coordinate
-     * @param z the z coordinate
-     * @return true if the container is blocked
-     */
-    public boolean isAnyContainerNeeded(Player player, int x, int y, int z);
+    public boolean activateContainer(Player player, boolean silentchest, Block block);
 
 }

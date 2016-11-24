@@ -16,6 +16,8 @@
 
 package com.lishid.openinv.internal.v1_5_R2;
 
+import java.lang.reflect.Field;
+
 import com.lishid.openinv.OpenInv;
 import com.lishid.openinv.Permissions;
 import com.lishid.openinv.internal.IInventoryAccess;
@@ -29,17 +31,16 @@ import net.minecraft.server.v1_5_R2.IInventory;
 import org.bukkit.craftbukkit.v1_5_R2.inventory.CraftInventory;
 
 public class InventoryAccess implements IInventoryAccess {
+
     @Override
     public boolean check(Inventory inventory, HumanEntity player) {
-        IInventory inv = ((CraftInventory) inventory).getInventory();
+        IInventory inv = grabInventory(inventory);
 
         if (inv instanceof SpecialPlayerInventory) {
             if (!OpenInv.hasPermission(player, Permissions.PERM_EDITINV)) {
                 return false;
             }
-        }
-
-        else if (inv instanceof SpecialEnderChest) {
+        } else if (inv instanceof SpecialEnderChest) {
             if (!OpenInv.hasPermission(player, Permissions.PERM_EDITENDER)) {
                 return false;
             }
@@ -47,4 +48,26 @@ public class InventoryAccess implements IInventoryAccess {
 
         return true;
     }
+
+    private IInventory grabInventory(Inventory inventory) {
+        if (inventory instanceof CraftInventory) {
+            return ((CraftInventory) inventory).getInventory();
+        }
+
+        // Use reflection to find the iiventory
+        Class<? extends Inventory> clazz = inventory.getClass();
+        IInventory result = null;
+        for (Field f : clazz.getDeclaredFields()) {
+            f.setAccessible(true);
+            if (IInventory.class.isAssignableFrom(f.getDeclaringClass())) {
+                try {
+                    result = (IInventory) f.get(inventory);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
+    }
+
 }

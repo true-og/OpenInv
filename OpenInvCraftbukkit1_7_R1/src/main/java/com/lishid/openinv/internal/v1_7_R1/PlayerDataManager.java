@@ -34,21 +34,25 @@ public class PlayerDataManager implements IPlayerDataManager {
 
     @Override
     public Player loadPlayer(OfflinePlayer offline) {
-        MinecraftServer server = ((CraftServer) Bukkit.getServer()).getServer();
+        // Ensure the player has data
+        if (offline == null || !offline.hasPlayedBefore()) {
+            return null;
+        }
 
+        // Create a profile and entity to load the player data
         GameProfile profile = new GameProfile(null, offline.getName());
-        // Create an entity to load the player data
-        EntityPlayer entity = new EntityPlayer(server, server.getWorldServer(0), profile, new PlayerInteractManager(server.getWorldServer(0)));
+        MinecraftServer server = ((CraftServer) Bukkit.getServer()).getServer();
+        EntityPlayer entity = new EntityPlayer(server, server.getWorldServer(0), profile,
+                new PlayerInteractManager(server.getWorldServer(0)));
 
         // Get the bukkit entity
         Player target = (entity == null) ? null : entity.getBukkitEntity();
         if (target != null) {
             // Load data
             target.loadData();
-            // Return the entity
-            return target;
         }
-        return null;
+        // Return the entity
+        return target;
     }
 
     @Override

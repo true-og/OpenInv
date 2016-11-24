@@ -86,16 +86,14 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
         if (i >= is.length) {
             i -= is.length;
             is = this.armor;
-        }
-        else {
+        } else {
             i = getReversedItemSlotNum(i);
         }
 
         if (i >= is.length) {
             i -= is.length;
             is = this.extra;
-        }
-        else if (is == this.armor) {
+        } else if (is == this.armor) {
             i = getReversedArmorSlotNum(i);
         }
 
@@ -109,16 +107,14 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
         if (i >= is.length) {
             i -= is.length;
             is = this.armor;
-        }
-        else {
+        } else {
             i = getReversedItemSlotNum(i);
         }
 
         if (i >= is.length) {
             i -= is.length;
             is = this.extra;
-        }
-        else if (is == this.armor) {
+        } else if (is == this.armor) {
             i = getReversedArmorSlotNum(i);
         }
 
@@ -129,8 +125,7 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
                 itemstack = is[i];
                 is[i] = null;
                 return itemstack;
-            }
-            else {
+            } else {
                 itemstack = is[i].a(j);
                 if (is[i].count == 0) {
                     is[i] = null;
@@ -139,9 +134,8 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
                 return itemstack;
             }
         }
-        else {
-            return null;
-        }
+
+        return null;
     }
 
     @Override
@@ -151,16 +145,14 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
         if (i >= is.length) {
             i -= is.length;
             is = this.armor;
-        }
-        else {
+        } else {
             i = getReversedItemSlotNum(i);
         }
 
         if (i >= is.length) {
             i -= is.length;
             is = this.extra;
-        }
-        else if (is == this.armor) {
+        } else if (is == this.armor) {
             i = getReversedArmorSlotNum(i);
         }
 
@@ -170,9 +162,8 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
             is[i] = null;
             return itemstack;
         }
-        else {
-            return null;
-        }
+
+        return null;
     }
 
     @Override
@@ -182,16 +173,14 @@ public class SpecialPlayerInventory extends PlayerInventory implements ISpecialP
         if (i >= is.length) {
             i -= is.length;
             is = this.armor;
-        }
-        else {
+        } else {
             i = getReversedItemSlotNum(i);
         }
 
         if (i >= is.length) {
             i -= is.length;
             is = this.extra;
-        }
-        else if (is == this.armor) {
+        } else if (is == this.armor) {
             i = getReversedArmorSlotNum(i);
         }
 

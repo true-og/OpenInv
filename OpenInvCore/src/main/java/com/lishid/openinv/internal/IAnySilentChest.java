@@ -16,6 +16,7 @@
 
 package com.lishid.openinv.internal;
 
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 /**
@@ -25,13 +26,13 @@ import org.bukkit.entity.Player;
 public interface IAnySilentChest {
 
     /**
-     * @deprecated Use {@link IAnySilentContainer#activateContainer(Player, boolean, int, int, int)}.
+     * @deprecated Use {@link IAnySilentContainer#activateContainer(Player, boolean, Block)}.
      */
     @Deprecated
     public boolean activateChest(Player player, boolean anychest, boolean silentchest, int x, int y, int z);
 
     /**
-     * @deprecated Use {@link IAnySilentContainer#isAnyContainerNeeded(Player, int, int, int)}.
+     * @deprecated Use {@link IAnySilentContainer#isAnyContainerNeeded(Player, Block)}.
      */
     @Deprecated
     public boolean isAnyChestNeeded(Player player, int x, int y, int z);

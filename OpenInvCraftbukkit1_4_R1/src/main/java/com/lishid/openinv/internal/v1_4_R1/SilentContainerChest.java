@@ -24,13 +24,11 @@ import net.minecraft.server.v1_4_R1.ItemStack;
 import net.minecraft.server.v1_4_R1.PlayerInventory;
 
 public class SilentContainerChest extends ContainerChest {
-    public IInventory inv;
 
     public SilentContainerChest(IInventory i1, IInventory i2) {
         super(i1, i2);
-        inv = i2;
-        // close signal
-        inv.f();
+        // Send close signal
+        i2.f();
     }
 
     @Override
@@ -44,4 +42,5 @@ public class SilentContainerChest extends ContainerChest {
             entityHuman.drop(carried);
         }
     }
+
 }

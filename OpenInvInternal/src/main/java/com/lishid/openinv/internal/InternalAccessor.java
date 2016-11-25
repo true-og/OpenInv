@@ -91,14 +91,6 @@ public class InternalAccessor {
     }
 
     /**
-     * @deprecated Use {@link #newAnySilentContainer()}
-     */
-    @Deprecated
-    public IAnySilentChest newAnySilentChest() {
-        return newAnySilentContainer();
-    }
-
-    /**
      * Creates an instance of the ISpecialPlayerInventory implementation for the given Player, or
      * null if the current version is unsupported.
      * 

@@ -202,22 +202,4 @@ public class AnySilentContainer implements IAnySilentContainer {
         return returnValue;
     }
 
-    /**
-     * @deprecated Use {@link #activateContainer(Player, boolean, boolean, int, int, int)}.
-     */
-    @Deprecated
-    @Override
-    public boolean activateChest(Player player, boolean anychest, boolean silentchest, int x, int y, int z) {
-        return !activateContainer(player, silentchest, player.getWorld().getBlockAt(x, y, z));
-    }
-
-    /**
-     * @deprecated Use {@link #isAnyContainerNeeded(Player, org.bukkit.block.Block)}.
-     */
-    @Deprecated
-    @Override
-    public boolean isAnyChestNeeded(Player player, int x, int y, int z) {
-        return isAnyContainerNeeded(player, player.getWorld().getBlockAt(x, y, z));
-    }
-
 }

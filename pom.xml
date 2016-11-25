@@ -9,7 +9,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <openinv.version>3.0.0-SNAPSHOT</openinv.version>
+    <openinv.version>3.0.0</openinv.version>
   </properties>
 
   <profiles>
@@ -127,10 +127,6 @@
         <artifactId>maven-shade-plugin</artifactId>
         <version>2.4.3</version>
         <configuration>
-          <!--
-            ~ This keeps the final file clean, but may cause issues for people not familiar with the setup.
-            ~ If you're having trouble with the final product missing files, remove or tweak this configuration.
-           -->
           <filters>
             <filter>
               <artifact>*:*</artifact>

@@ -40,18 +40,15 @@ public class AnyChestPluginCommand implements CommandExecutor {
 
         Player player = (Player) sender;
 
-        if (args.length > 0) {
-            if (args[0].equalsIgnoreCase("check")) {
-                if (plugin.getPlayerAnyChestStatus(player))
-                    sender.sendMessage("AnyChest is ON.");
-                else
-                    sender.sendMessage("AnyChest is OFF.");
-            }
+        if (args.length > 0 && args[0].equalsIgnoreCase("check")) {
+            sender.sendMessage("AnyChest is " + (plugin.getPlayerAnyChestStatus(player) ? "ON" : "OFF") + ".");
+            return true;
         }
 
         plugin.setPlayerAnyChestStatus(player, !plugin.getPlayerAnyChestStatus(player));
-        sender.sendMessage("AnyChest is now " + (plugin.getPlayerAnyChestStatus(player) ? "On" : "Off") + ".");
+        sender.sendMessage("AnyChest is now " + (plugin.getPlayerAnyChestStatus(player) ? "ON" : "OFF") + ".");
 
         return true;
     }
+
 }

@@ -31,8 +31,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class OpenInvPluginCommand implements CommandExecutor {
+
     private final OpenInv plugin;
-    public static HashMap<Player, String> openInvHistory = new HashMap<Player, String>();
+    private HashMap<Player, String> openInvHistory = new HashMap<Player, String>();
 
     public OpenInvPluginCommand(OpenInv plugin) {
         this.plugin = plugin;
@@ -65,8 +66,7 @@ public class OpenInvPluginCommand implements CommandExecutor {
         // Read from history if target is not named
         if (args.length < 1) {
             name = history;
-        }
-        else {
+        } else {
             name = args[0];
         }
 
@@ -141,4 +141,5 @@ public class OpenInvPluginCommand implements CommandExecutor {
         // Open the inventory
         player.openInventory(inv.getBukkitInventory());
     }
+
 }

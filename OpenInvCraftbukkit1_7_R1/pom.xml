@@ -4,22 +4,22 @@
 
   <parent>
     <groupId>com.lishid</groupId>
-    <artifactId>openinvparent</artifactId>
+    <artifactId>openinvparent-jikoo</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>OpenInvCraftbukkit1_7_R1</artifactId>
+  <artifactId>openinvcraftbukkit1_7_R1-jikoo</artifactId>
   <name>OpenInvCraftbukkit1_7_R1</name>
 
   <dependencies>
     <dependency>
       <groupId>com.lishid</groupId>
-      <artifactId>openinvcore</artifactId>
+      <artifactId>openinvcore-jikoo</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.lishid</groupId>
-      <artifactId>openinvplugin</artifactId>
+      <artifactId>openinvplugin-jikoo</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>

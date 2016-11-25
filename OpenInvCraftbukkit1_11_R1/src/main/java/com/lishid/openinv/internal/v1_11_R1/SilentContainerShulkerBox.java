@@ -30,7 +30,7 @@ public class SilentContainerShulkerBox extends ContainerShulkerBox {
 
     private static Field exposeOpenStatus() throws NoSuchFieldException, SecurityException {
         if (fieldShulkerActionData == null) {
-            fieldShulkerActionData = TileEntityShulkerBox.class.getDeclaredField("fieldShulkerActionData");
+            fieldShulkerActionData = TileEntityShulkerBox.class.getDeclaredField("h");
             fieldShulkerActionData.setAccessible(true);
         }
         return fieldShulkerActionData;

@@ -25,12 +25,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class SearchInvPluginCommand implements CommandExecutor {
-    public SearchInvPluginCommand() {
-
-    }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        String PlayerList = "";
 
         Material material = null;
         int count = 1;
@@ -40,11 +36,11 @@ public class SearchInvPluginCommand implements CommandExecutor {
             gData = args[0].split(":");
             material = Material.matchMaterial(gData[0]);
         }
+
         if (args.length >= 2) {
             try {
                 count = Integer.parseInt(args[1]);
-            }
-            catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex) {
                 sender.sendMessage(ChatColor.RED + "'" + args[1] + "' is not a number!");
                 return false;
             }
@@ -55,13 +51,22 @@ public class SearchInvPluginCommand implements CommandExecutor {
             return false;
         }
 
-        for (Player templayer : Bukkit.getServer().getOnlinePlayers()) {
-            if (templayer.getInventory().contains(material, count)) {
-                PlayerList += templayer.getName() + "  ";
+        StringBuilder players = new StringBuilder();
+        for (Player player : Bukkit.getServer().getOnlinePlayers()) {
+            if (player.getInventory().contains(material, count)) {
+                players.append(player.getName()).append(", ");
             }
         }
 
-        sender.sendMessage("Players with the item " + material.toString() + ":  " + PlayerList);
+        // Matches found, delete trailing comma and space
+        if (players.length() > 0) {
+            players.delete(players.length() - 2, players.length());
+        } else {
+            sender.sendMessage("No players found with " + material.toString());
+        }
+
+        sender.sendMessage("Players with the item " + material.toString() + ":  " + players.toString());
         return true;
     }
+
 }

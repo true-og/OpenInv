@@ -40,17 +40,13 @@ public class SilentChestPluginCommand implements CommandExecutor {
 
         Player player = (Player) sender;
 
-        if (args.length > 0) {
-            if (args[0].equalsIgnoreCase("check")) {
-                if (plugin.getPlayerSilentChestStatus(player))
-                    sender.sendMessage("SilentChest is ON.");
-                else
-                    sender.sendMessage("SilentChest is OFF.");
-            }
+        if (args.length > 0 && args[0].equalsIgnoreCase("check")) {
+            sender.sendMessage("SilentChest is " + (plugin.getPlayerAnyChestStatus(player) ? "ON" : "OFF") + ".");
+            return true;
         }
 
         plugin.setPlayerSilentChestStatus(player, !plugin.getPlayerSilentChestStatus(player));
-        sender.sendMessage("SilentChest is now " + (plugin.getPlayerSilentChestStatus(player) ? "On" : "Off") + ".");
+        sender.sendMessage("SilentChest is now " + (plugin.getPlayerSilentChestStatus(player) ? "ON" : "OFF") + ".");
 
         return true;
     }

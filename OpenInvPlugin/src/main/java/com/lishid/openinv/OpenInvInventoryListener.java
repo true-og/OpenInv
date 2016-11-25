@@ -43,4 +43,5 @@ public class OpenInvInventoryListener implements Listener {
             event.setCancelled(true);
         }
     }
+
 }

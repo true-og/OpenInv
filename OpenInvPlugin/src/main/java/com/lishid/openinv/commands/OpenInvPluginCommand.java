@@ -33,7 +33,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class OpenInvPluginCommand implements CommandExecutor {
 
     private final OpenInv plugin;
-    private HashMap<Player, String> openInvHistory = new HashMap<Player, String>();
+    private final HashMap<Player, String> openInvHistory = new HashMap<Player, String>();
 
     public OpenInvPluginCommand(OpenInv plugin) {
         this.plugin = plugin;
@@ -47,7 +47,7 @@ public class OpenInvPluginCommand implements CommandExecutor {
         }
 
         if (args.length > 0 && args[0].equalsIgnoreCase("?")) {
-            OpenInv.ShowHelp((Player) sender);
+            plugin.showHelp((Player) sender);
             return true;
         }
 
@@ -115,19 +115,19 @@ public class OpenInvPluginCommand implements CommandExecutor {
         }
 
         // Permissions checks
-        if (!OpenInv.hasPermission(player, Permissions.PERM_OVERRIDE) && OpenInv.hasPermission(onlineTarget, Permissions.PERM_EXEMPT)) {
+        if (!Permissions.OVERRIDE.hasPermission(player) && Permissions.EXEMPT.hasPermission(onlineTarget)) {
             player.sendMessage(ChatColor.RED + onlineTarget.getDisplayName() + "'s inventory is protected!");
             return;
         }
 
         // Crosswork check
-        if ((!OpenInv.hasPermission(player, Permissions.PERM_CROSSWORLD) && !OpenInv.hasPermission(player, Permissions.PERM_OVERRIDE)) && onlineTarget.getWorld() != player.getWorld()) {
+        if ((!Permissions.CROSSWORLD.hasPermission(player) && !Permissions.OVERRIDE.hasPermission(player)) && onlineTarget.getWorld() != player.getWorld()) {
             player.sendMessage(ChatColor.RED + onlineTarget.getDisplayName() + " is not in your world!");
             return;
         }
 
         // Self-open check
-        if (!OpenInv.hasPermission(player, Permissions.PERM_OPENSELF) && onlineTarget.equals(player)) {
+        if (!Permissions.OPENSELF.hasPermission(player) && onlineTarget.equals(player)) {
             player.sendMessage(ChatColor.RED + "You're not allowed to openinv yourself.");
             return;
         }
@@ -136,7 +136,7 @@ public class OpenInvPluginCommand implements CommandExecutor {
         openInvHistory.put(player, onlineTarget.getName());
 
         // Create the inventory
-        ISpecialPlayerInventory inv = plugin.getInventoryFor(onlineTarget, online);
+        ISpecialPlayerInventory inv = plugin.getInventory(onlineTarget, online);
 
         // Open the inventory
         player.openInventory(inv.getBukkitInventory());

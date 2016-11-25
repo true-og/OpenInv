@@ -16,11 +16,14 @@
 
 package com.lishid.openinv;
 
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.inventory.Inventory;
 
 public class OpenInvInventoryListener implements Listener {
 
@@ -30,18 +33,30 @@ public class OpenInvInventoryListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!plugin.getInventoryAccess().check(event.getInventory(), event.getWhoClicked())) {
+        if (cancelInteract(event.getWhoClicked(), event.getInventory())) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (!plugin.getInventoryAccess().check(event.getInventory(), event.getWhoClicked())) {
+        if (cancelInteract(event.getWhoClicked(), event.getInventory())) {
             event.setCancelled(true);
         }
+    }
+
+    private boolean cancelInteract(HumanEntity entity, Inventory inventory) {
+        return plugin.getInventoryAccess().isSpecialPlayerInventory(inventory)
+                && !Permissions.EDITINV.hasPermission(entity)
+                || plugin.getInventoryAccess().isSpecialEnderChest(inventory)
+                        && !Permissions.EDITENDER.hasPermission(entity);
+    }
+
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        plugin.changeWorld(event.getPlayer());
     }
 
 }

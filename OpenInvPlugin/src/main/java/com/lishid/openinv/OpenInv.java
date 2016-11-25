@@ -17,6 +17,8 @@
 package com.lishid.openinv;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -37,13 +39,12 @@ import com.lishid.openinv.util.Cache;
 import com.lishid.openinv.util.Function;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -106,7 +107,7 @@ public class OpenInv extends JavaPlugin {
 
         accessor = new InternalAccessor(this);
         // Version check
-        if (!accessor.initialize(getServer())) {
+        if (!accessor.isSupported()) {
             getLogger().info("Your version of CraftBukkit (" + accessor.getVersion() + ") is not supported.");
             getLogger().info("Please look for an updated version of OpenInv.");
             pm.disablePlugin(this);
@@ -160,23 +161,43 @@ public class OpenInv extends JavaPlugin {
         this.playerCache.invalidateAll();
     }
 
+    /**
+     * Checks if the server version is supported by OpenInv.
+     * 
+     * @return true if the server version is supported
+     */
+    public boolean isSupportedVersion() {
+        return accessor.isSupported();
+    }
+
+    /**
+     * Gets the active IInventoryAccess implementation. May return null if the server version is
+     * unsupported.
+     * 
+     * @return the IInventoryAccess
+     */
     public IInventoryAccess getInventoryAccess() {
         return this.inventoryAccess;
     }
 
+    /**
+     * Gets the active ISilentContainer implementation. May return null if the server version is
+     * unsupported.
+     * 
+     * @return the ISilentContainer
+     */
     public IAnySilentContainer getAnySilentContainer() {
         return this.anySilentContainer;
     }
 
     /**
-     * @deprecated Use {@link #getAnySilentContainer()}
+     * Gets an ISpecialPlayerInventory for the given Player.
+     * 
+     * @param player the Player
+     * @param online true if the Player is currently online
+     * @return the ISpecialPlayerInventory
      */
-    @Deprecated
-    public com.lishid.openinv.internal.IAnySilentChest getAnySilentChest() {
-        return this.getAnySilentContainer();
-    }
-
-    public ISpecialPlayerInventory getInventoryFor(Player player, boolean online) {
+    public ISpecialPlayerInventory getInventory(Player player, boolean online) {
         String id = playerLoader.getPlayerDataID(player);
         if (inventories.containsKey(id)) {
             return inventories.get(id);
@@ -187,7 +208,14 @@ public class OpenInv extends JavaPlugin {
         return inv;
     }
 
-    public ISpecialEnderChest getEnderChestFor(Player player, boolean online) {
+    /**
+     * Gets an ISpecialEnderChest for the given Player.
+     * 
+     * @param player the Player
+     * @param online true if the Player is currently online
+     * @return the ISpecialEnderChest
+     */
+    public ISpecialEnderChest getEnderChest(Player player, boolean online) {
         String id = playerLoader.getPlayerDataID(player);
         if (enderChests.containsKey(id)) {
             return enderChests.get(id);
@@ -199,7 +227,7 @@ public class OpenInv extends JavaPlugin {
     }
 
     /**
-     * Unload a cached Player's data.
+     * Forcibly unload a cached Player's data.
      * 
      * @param player the OfflinePlayer to unload
      */
@@ -207,31 +235,75 @@ public class OpenInv extends JavaPlugin {
         this.playerCache.invalidate(this.playerLoader.getPlayerDataID(player));
     }
 
+    /**
+     * Check the configuration value for whether or not OpenInv saves player data when unloading
+     * players. This is exclusively for users who do not allow editing of inventories, only viewing,
+     * and wish to prevent any possibility of bugs such as lishid#40. If true, OpenInv will not ever
+     * save any edits made to players.
+     * 
+     * @return false unless configured otherwise
+     */
     public boolean disableSaving() {
         return getConfig().getBoolean("DisableSaving", false);
     }
 
+    /**
+     * Check the configuration value for whether or not OpenInv displays a notification to the user
+     * when a container is activated with SilentChest.
+     * 
+     * @return true unless configured otherwise
+     */
     public boolean notifySilentChest() {
         return getConfig().getBoolean("NotifySilentChest", true);
     }
 
+    /**
+     * Check the configuration value for whether or not OpenInv displays a notification to the user
+     * when a container is activated with AnyChest.
+     * 
+     * @return true unless configured otherwise
+     */
     public boolean notifyAnyChest() {
         return getConfig().getBoolean("NotifyAnyChest", true);
     }
 
+    /**
+     * Gets a player's SilentChest setting.
+     * 
+     * @param player the OfflinePlayer
+     * @return true if SilentChest is enabled
+     */
     public boolean getPlayerSilentChestStatus(OfflinePlayer player) {
         return getConfig().getBoolean("SilentChest." + playerLoader.getPlayerDataID(player) + ".toggle", false);
     }
 
+    /**
+     * Sets a player's SilentChest setting.
+     * 
+     * @param player the OfflinePlayer
+     * @param status the status
+     */
     public void setPlayerSilentChestStatus(OfflinePlayer player, boolean status) {
         getConfig().set("SilentChest." + playerLoader.getPlayerDataID(player) + ".toggle", status);
         saveConfig();
     }
 
+    /**
+     * Gets the provided player's AnyChest setting.
+     * 
+     * @param player the OfflinePlayer
+     * @return true if AnyChest is enabled
+     */
     public boolean getPlayerAnyChestStatus(OfflinePlayer player) {
         return getConfig().getBoolean("AnyChest." + playerLoader.getPlayerDataID(player) + ".toggle", true);
     }
 
+    /**
+     * Sets a player's AnyChest setting.
+     * 
+     * @param player the OfflinePlayer
+     * @param status the status
+     */
     public void setPlayerAnyChestStatus(OfflinePlayer player, boolean status) {
         getConfig().set("AnyChest." + playerLoader.getPlayerDataID(player) + ".toggle", status);
         saveConfig();
@@ -239,9 +311,13 @@ public class OpenInv extends JavaPlugin {
 
     /**
      * Get an OfflinePlayer by name.
+     * <p>
+     * Note: This method is potentially very heavily blocking. It should not ever be called on the
+     * main thread, and if it is, a stack trace will be displayed alerting server owners to the
+     * call.
      * 
      * @param name the name of the Player
-     * @return the OfflinePlayer, or null if no players have ever logged in
+     * @return the OfflinePlayer with the closest matching name or null if no players have ever logged in
      */
     public OfflinePlayer matchPlayer(String name) {
 
@@ -309,7 +385,7 @@ public class OpenInv extends JavaPlugin {
     }
 
     /**
-     * Load a Player from an OfflinePlayer.
+     * Load a Player from an OfflinePlayer. May return null under some circumstances.
      * 
      * @param offline the OfflinePlayer to load a Player for
      * @return the Player
@@ -380,7 +456,7 @@ public class OpenInv extends JavaPlugin {
     /**
      * Method for handling a Player coming online.
      * 
-     * @param player
+     * @param player the Player
      */
     public void setPlayerOnline(final Player player) {
 
@@ -413,7 +489,7 @@ public class OpenInv extends JavaPlugin {
     /**
      * Method for handling a Player going offline.
      * 
-     * @param player
+     * @param player the Player
      */
     public void setPlayerOffline(final Player player) {
 
@@ -433,31 +509,80 @@ public class OpenInv extends JavaPlugin {
         }
     }
 
-    public static void ShowHelp(Player player) {
-        // TODO: Do not show commands players lack permissions for
-        player.sendMessage(ChatColor.GREEN + "/openinv <Player> - Open a player's inventory");
-        player.sendMessage(ChatColor.GREEN + "   (aliases: oi, inv, open)");
-        player.sendMessage(ChatColor.GREEN + "/openender <Player> - Open a player's enderchest");
-        player.sendMessage(ChatColor.GREEN + "   (aliases: oe, enderchest)");
-        player.sendMessage(ChatColor.GREEN + "/searchinv <Item> [MinAmount] - ");
-        player.sendMessage(ChatColor.GREEN + "   Search and list players having a specific item.");
-        player.sendMessage(ChatColor.GREEN + "   (aliases: si, search)");
-        player.sendMessage(ChatColor.GREEN + "/anychest - Toggle anychest function");
-        player.sendMessage(ChatColor.GREEN + "   (aliases: ac)");
-        player.sendMessage(ChatColor.GREEN + "/silentchest - Toggle silent chest function");
-        player.sendMessage(ChatColor.GREEN + "   (aliases: sc, silent)");
+    /**
+     * Evicts all viewers lacking cross-world permissions from a Player's inventory.
+     * 
+     * @param player the Player
+     */
+    public void changeWorld(final Player player) {
+
+        String key = this.playerLoader.getPlayerDataID(player);
+
+        // Check if the player is cached. If not, neither of their inventories is open.
+        if (!this.playerCache.containsKey(key)) {
+            return;
+        }
+
+        if (this.inventories.containsKey(key)) {
+            Iterator<HumanEntity> iterator = this.inventories.get(key).getBukkitInventory().getViewers().iterator();
+            while (iterator.hasNext()) {
+                HumanEntity human = iterator.next();
+                // If player has permission or is in the same world, allow continued access
+                // Just in case, also allow null worlds.
+                if (Permissions.CROSSWORLD.hasPermission(human) || human.getWorld() == null
+                        || human.getWorld().equals(player.getWorld())) {
+                    continue;
+                }
+                human.closeInventory();
+            }
+        }
+
+        if (this.enderChests.containsKey(key)) {
+            Iterator<HumanEntity> iterator = this.enderChests.get(key).getBukkitInventory().getViewers().iterator();
+            while (iterator.hasNext()) {
+                HumanEntity human = iterator.next();
+                if (Permissions.CROSSWORLD.hasPermission(human) || human.getWorld() == null
+                        || human.getWorld().equals(player.getWorld())) {
+                    continue;
+                }
+                human.closeInventory();
+            }
+        }
     }
 
-    public static boolean hasPermission(Permissible player, String permission) {
-        String[] parts = permission.split("\\.");
-        String perm = "";
-        for (int i = 0; i < parts.length; i++) {
-            if (player.hasPermission(perm + "*")) {
-                return true;
+    /**
+     * Displays all applicable help for OpenInv commands.
+     * 
+     * @param player the Player to help
+     */
+    public void showHelp(Player player) {
+        // Get registered commands
+        for (String commandName : this.getDescription().getCommands().keySet()) {
+            PluginCommand command = this.getCommand(commandName);
+
+            // Ensure command is successfully registered and player can use it
+            if (command == null  || !command.testPermissionSilent(player)) {
+                continue;
             }
-            perm += parts[i] + ".";
+
+            // Send usage
+            player.sendMessage(command.getUsage());
+
+            List<String> aliases = command.getAliases();
+            if (aliases.isEmpty()) {
+                continue;
+            }
+
+            // Assemble alias list
+            StringBuilder aliasBuilder = new StringBuilder("   (aliases: ");
+            for (String alias : aliases) {
+                aliasBuilder.append(alias).append(", ");
+            }
+            aliasBuilder.delete(aliasBuilder.length() - 2, aliasBuilder.length()).append(')');
+
+            // Send all aliases
+            player.sendMessage(aliasBuilder.toString());
         }
-        return player.hasPermission(permission);
     }
 
 }

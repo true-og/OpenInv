@@ -33,7 +33,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class OpenEnderPluginCommand implements CommandExecutor {
 
     private final OpenInv plugin;
-    private HashMap<Player, String> openEnderHistory = new HashMap<Player, String>();
+    private final HashMap<Player, String> openEnderHistory = new HashMap<Player, String>();
 
     public OpenEnderPluginCommand(OpenInv plugin) {
         this.plugin = plugin;
@@ -47,7 +47,7 @@ public class OpenEnderPluginCommand implements CommandExecutor {
         }
 
         if (args.length > 0 && args[0].equalsIgnoreCase("?")) {
-            OpenInv.ShowHelp((Player) sender);
+            plugin.showHelp((Player) sender);
             return true;
         }
 
@@ -114,7 +114,7 @@ public class OpenEnderPluginCommand implements CommandExecutor {
         }
 
 
-        if (!onlineTarget.equals(player) && !OpenInv.hasPermission(player, Permissions.PERM_ENDERCHEST_ALL)) {
+        if (!onlineTarget.equals(player) && !Permissions.ENDERCHEST_ALL.hasPermission(player)) {
             player.sendMessage(ChatColor.RED + "You do not have permission to access other player's enderchest");
             return;
         }
@@ -123,7 +123,7 @@ public class OpenEnderPluginCommand implements CommandExecutor {
         openEnderHistory.put(player, onlineTarget.getName());
 
         // Create the inventory
-        ISpecialEnderChest chest = plugin.getEnderChestFor(onlineTarget, online);
+        ISpecialEnderChest chest = plugin.getEnderChest(onlineTarget, online);
 
         // Open the inventory
         player.openInventory(chest.getBukkitInventory());

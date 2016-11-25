@@ -16,13 +16,11 @@
 
 package com.lishid.openinv.internal.v1_7_R1;
 
-import java.lang.reflect.Field;
-
-import com.lishid.openinv.OpenInv;
-import com.lishid.openinv.Permissions;
 import com.lishid.openinv.internal.IInventoryAccess;
+import com.lishid.openinv.internal.ISpecialEnderChest;
+import com.lishid.openinv.internal.ISpecialPlayerInventory;
+import com.lishid.openinv.internal.InternalAccessor;
 
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.Inventory;
 
 // Volatile
@@ -33,41 +31,49 @@ import org.bukkit.craftbukkit.v1_7_R1.inventory.CraftInventory;
 public class InventoryAccess implements IInventoryAccess {
 
     @Override
-    public boolean check(Inventory inventory, HumanEntity player) {
-        IInventory inv = grabInventory(inventory);
-
-        if (inv instanceof SpecialPlayerInventory) {
-            if (!OpenInv.hasPermission(player, Permissions.PERM_EDITINV)) {
-                return false;
-            }
-        } else if (inv instanceof SpecialEnderChest) {
-            if (!OpenInv.hasPermission(player, Permissions.PERM_EDITENDER)) {
-                return false;
-            }
+    public boolean isSpecialPlayerInventory(Inventory inventory) {
+        if (inventory instanceof CraftInventory) {
+            return ((CraftInventory) inventory).getInventory() instanceof ISpecialPlayerInventory;
         }
-
-        return true;
+        return InternalAccessor.grabFieldOfTypeFromObject(IInventory.class, inventory) instanceof ISpecialPlayerInventory;
     }
 
-    private IInventory grabInventory(Inventory inventory) {
+    @Override
+    public ISpecialPlayerInventory getSpecialPlayerInventory(Inventory inventory) {
+        IInventory inv;
         if (inventory instanceof CraftInventory) {
-            return ((CraftInventory) inventory).getInventory();
+            inv = ((CraftInventory) inventory).getInventory();
+        } else {
+            inv = InternalAccessor.grabFieldOfTypeFromObject(IInventory.class, inventory);
         }
 
-        // Use reflection to find the iiventory
-        Class<? extends Inventory> clazz = inventory.getClass();
-        IInventory result = null;
-        for (Field f : clazz.getDeclaredFields()) {
-            f.setAccessible(true);
-            if (IInventory.class.isAssignableFrom(f.getDeclaringClass())) {
-                try {
-                    result = (IInventory) f.get(inventory);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+        if (inv instanceof SpecialPlayerInventory) {
+            return (SpecialPlayerInventory) inv;
         }
-        return result;
+        return null;
+    }
+
+    @Override
+    public boolean isSpecialEnderChest(Inventory inventory) {
+        if (inventory instanceof CraftInventory) {
+            return ((CraftInventory) inventory).getInventory() instanceof ISpecialEnderChest;
+        }
+        return InternalAccessor.grabFieldOfTypeFromObject(IInventory.class, inventory) instanceof ISpecialEnderChest;
+    }
+
+    @Override
+    public ISpecialEnderChest getSpecialEnderChest(Inventory inventory) {
+        IInventory inv;
+        if (inventory instanceof CraftInventory) {
+            inv = ((CraftInventory) inventory).getInventory();
+        } else {
+            inv = InternalAccessor.grabFieldOfTypeFromObject(IInventory.class, inventory);
+        }
+
+        if (inv instanceof SpecialEnderChest) {
+            return (SpecialEnderChest) inv;
+        }
+        return null;
     }
 
 }

@@ -17,39 +17,28 @@
 package com.lishid.openinv.internal;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 
-import com.lishid.openinv.OpenInv;
-
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 public class InternalAccessor {
 
-    private final OpenInv plugin;
+    private final Plugin plugin;
 
-    private String version;
+    private final String version;
+    private boolean supported = false;
 
-    public InternalAccessor(OpenInv plugin) {
+    public InternalAccessor(Plugin plugin) {
         this.plugin = plugin;
-    }
 
-    /**
-     * Check if the current server version is supported, and, if it is, prepare to load version-specific code.
-     * 
-     * @param server the Server
-     * 
-     * @return true if supported
-     */
-    public boolean initialize(Server server) {
-        String packageName = server.getClass().getPackage().getName();
+        String packageName = plugin.getServer().getClass().getPackage().getName();
         version = packageName.substring(packageName.lastIndexOf('.') + 1);
 
         try {
             Class.forName("com.lishid.openinv.internal." + version + ".PlayerDataManager");
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+            supported = true;
+        } catch (Exception e) {}
     }
 
     /**
@@ -60,6 +49,15 @@ public class InternalAccessor {
      */
     public String getVersion() {
         return this.version != null ? this.version : "null";
+    }
+
+    /**
+     * Checks if the server implementation is supported.
+     * 
+     * @return true if initialized for a supported server version
+     */
+    public boolean isSupported() {
+        return this.supported;
     }
 
     /**
@@ -168,6 +166,23 @@ public class InternalAccessor {
         }
 
         return null;
+    }
+
+    public static <T> T grabFieldOfTypeFromObject(Class<T> type, Object object) {
+        // Use reflection to find the iinventory
+        Class<?> clazz = object.getClass();
+        T result = null;
+        for (Field f : clazz.getDeclaredFields()) {
+            f.setAccessible(true);
+            if (type.isAssignableFrom(f.getDeclaringClass())) {
+                try {
+                    result = type.cast(f.get(object));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
     }
 
 }

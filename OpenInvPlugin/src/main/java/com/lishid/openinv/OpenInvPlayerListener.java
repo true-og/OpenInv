@@ -53,23 +53,23 @@ public class OpenInvPlayerListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        boolean anychest = OpenInv.hasPermission(player, Permissions.PERM_ANYCHEST) && plugin.getPlayerAnyChestStatus(player);
+        boolean anychest = Permissions.ANYCHEST.hasPermission(player) && plugin.getPlayerAnyChestStatus(player);
         boolean needsAnyChest = plugin.getAnySilentContainer().isAnyContainerNeeded(player, event.getClickedBlock());
 
         if (!anychest && needsAnyChest) {
             return;
         }
 
-        boolean silentchest = OpenInv.hasPermission(player, Permissions.PERM_SILENT) && plugin.getPlayerSilentChestStatus(player);
+        boolean silentchest = Permissions.SILENT.hasPermission(player) && plugin.getPlayerSilentChestStatus(player);
 
         // If anychest or silentchest is active
         if ((anychest || silentchest) && plugin.getAnySilentContainer().activateContainer(player, silentchest, event.getClickedBlock())) {
             if (silentchest && plugin.notifySilentChest() && needsAnyChest && plugin.notifyAnyChest()) {
-                player.sendMessage("You are opening a blocked chest silently.");
+                player.sendMessage("You are opening a blocked container silently.");
             } else if (silentchest && plugin.notifySilentChest()) {
-                player.sendMessage("You are opening a chest silently.");
+                player.sendMessage("You are opening a container silently.");
             } else if (needsAnyChest && plugin.notifyAnyChest()) {
-                player.sendMessage("You are opening a blocked chest.");
+                player.sendMessage("You are opening a blocked container.");
             }
             event.setCancelled(true);
         }

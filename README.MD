@@ -1,3 +1,6 @@
+# This repository is no longer maintained
+A while back I was invited to be a collaborator of [lishid/OpenInv](https://github.com/lishid/OpenInv). As of [4335b8dc2c](https://github.com/lishid/OpenInv/commit/4335b8dc2cbd2aeb4e97b84ba1c9144ef457c9d1), its master branch became approximately level with my own. All future updates will be pushed there. Releases can be found in the [releases tab](https://github.com/lishid/OpenInv/releases) or [on Bukkit](https://dev.bukkit.org/projects/openinv/files).
+
 ## Goals
 This fork of OpenInv was created when the lag caused by offline player lookups post-UUID migration became too much to bear. Overall, it does not differ much from the original.
 

@@ -20,9 +20,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.lishid.openinv.commands.ContainerSettingCommand;
 import com.lishid.openinv.commands.OpenInvCommand;
-import com.lishid.openinv.commands.SearchContainerCommand;
-import com.lishid.openinv.commands.SearchEnchantCommand;
-import com.lishid.openinv.commands.SearchInvCommand;
+import com.lishid.openinv.commands.SearchCommand;
 import com.lishid.openinv.internal.IAnySilentContainer;
 import com.lishid.openinv.internal.ISpecialEnderChest;
 import com.lishid.openinv.internal.ISpecialInventory;
@@ -299,6 +297,10 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
     }
 
     public void sendSystemMessage(@NotNull Player player, @NotNull String key) {
+        this.sendSystemMessage(player, key, new String[0]);
+    }
+
+    public void sendSystemMessage(@NotNull Player player, @NotNull String key, String... replacements) {
         String message = this.languageManager.getValue(key, getLocale(player));
 
         if (message == null) {
@@ -332,6 +334,14 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
         } else {
             return this.getConfig().getString("settings.locale", "en_us");
         }
+    }
+
+    public int getSearchPollsPerTick() {
+        return this.getConfig().getInt("settings.search.polls-per-tick", 20);
+    }
+
+    public int getSearchResultsMax() {
+        return this.getConfig().getInt("settings.search.max-results", 40);
     }
 
     @Override
@@ -371,9 +381,7 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
 
             // Register commands to their executors
             this.setCommandExecutor(new OpenInvCommand(this), "openinv", "openender");
-            this.setCommandExecutor(new SearchContainerCommand(this), "searchcontainer");
-            this.setCommandExecutor(new SearchInvCommand(this), "searchinv", "searchender");
-            this.setCommandExecutor(new SearchEnchantCommand(this), "searchenchant");
+            this.setCommandExecutor(new SearchCommand(this), "search");
             this.setCommandExecutor(new ContainerSettingCommand(this), "silentcontainer", "anycontainer");
 
         } else {

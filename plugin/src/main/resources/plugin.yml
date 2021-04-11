@@ -52,12 +52,12 @@ commands:
     permission: OpenInv.openender
     usage: |-
            /<command> [Player] - Open a player's enderchest
-  searchinv:
-    aliases: [si]
-    description: Search and list players having a specific item
+  search:
+    aliases: [ searchinv, si, searchender, se, searchenchant, searchenchants, searchcontainer, searchchest ]
+    description: Search inventories for a matching item
     permission: OpenInv.search
     usage: |-
-           /<command> <Material> [MinAmount] - MinAmount is optional, the minimum amount required
+           /<command> <inventories> <item details>
   searchender:
     aliases: [se]
     permission: OpenInv.search
@@ -76,14 +76,3 @@ commands:
     permission: OpenInv.anychest
     usage: |-
            /<command> [check|on|off] - Check, toggle, or set AnyContainer
-  searchenchant:
-    aliases: [searchenchants]
-    description: Search and list players with a specific enchantment.
-    permission: OpenInv.searchenchant
-    usage: |-
-           /<command> <[Enchantment] [MinLevel]> - Enchantment is the enchantment type, MinLevel is the minimum level. One is optional
-  searchcontainer:
-    aliases: [searchchest]
-    description: Search and list containers with a specific material.
-    permission: OpenInv.searchcontainer
-    usage: /<command> <Material> [ChunkRadius] - ChunkRadius is optional, the length that will be searched for matching items. Default 5

@@ -1,4 +1,7 @@
-config-version: 4
+config-version: 5
 settings:
+  search:
+    polls-per-tick: 5
+    max-results: 40
   disable-saving: false
   locale: 'en_us'

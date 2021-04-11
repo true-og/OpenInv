@@ -2,6 +2,8 @@ messages:
   error:
     consoleUnsupported: 'You cannot use this command from console.'
     lootNotGenerated: '&cLoot not generated! Please disable &b/silentcontainer&c.'
+    search:
+      invalidInventory: '&cUnable to determine target inventories. Try using tab completion!'
     invalidMaterial: '&cInvalid material: "%target%"'
     invalidNumber: '&cInvalid number: "%target%"'
     invalidPlayer: '&cPlayer not found!'
@@ -17,12 +19,10 @@ messages:
     containerBlockedSilent: 'You are opening a blocked container silently.'
     containerSilent: 'You are opening a container silently.'
     settingState: '%setting%: %state%'
-    player:
-      noMatches: 'No players found with %target%.'
-      matches: 'Players holding %target%: %detail%'
-    container:
-      noMatches: 'No containers found with %target%.'
-      matches: 'Containers holding %target%: %detail%'
+    search:
+      progress: 'Searching... %progress%% | Results: %matches%'
+      noMatches: 'No items found with search parameters.'
+      matches: 'Locations of items matching parameters: '
     on: 'on'
     off: 'off'
 container:

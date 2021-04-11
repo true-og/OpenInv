@@ -60,11 +60,22 @@ public class ConfigUpdater {
             if (version < 4) {
                 updateConfig3To4();
             }
+            if (version < 5) {
+                updateConfig4To5();
+            }
 
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 plugin.saveConfig();
                 plugin.getLogger().info("Configuration update complete!");
             });
+        });
+    }
+
+    private void updateConfig4To5() {
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            plugin.getConfig().set("settings.search.polls-per-tick", 5);
+            plugin.getConfig().set("settings.search.max-results", 40);
+            plugin.getConfig().set("config-version", 5);
         });
     }
 

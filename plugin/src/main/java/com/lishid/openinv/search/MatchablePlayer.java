@@ -27,6 +27,8 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
@@ -68,9 +70,21 @@ public class MatchablePlayer implements Matchable {
             }
         }
 
-        // If no matches are found yet, check cursor just in case.
-        if (!matchInv && matcher.matches(player.getOpenInventory().getCursor())) {
+        InventoryView openInventory = player.getOpenInventory();
+
+        // If no matches are found yet, check cursor.
+        if (!matchInv && matcher.matches(openInventory.getCursor())) {
             matchInv = true;
+        }
+
+        // Check player crafting inventory.
+        if (!matchInv && openInventory.getType() == InventoryType.CRAFTING) {
+            for (ItemStack content : openInventory.getTopInventory().getContents()) {
+                if (matcher.matches(content)) {
+                    matchInv = true;
+                    break;
+                }
+            }
         }
 
         // Check ender chest.

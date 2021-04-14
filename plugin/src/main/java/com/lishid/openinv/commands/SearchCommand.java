@@ -52,6 +52,7 @@ public class SearchCommand implements TabExecutor {
             @NotNull Command command,
             @NotNull String label,
             @NotNull String[] args) {
+        // TODO 1 search active per sender
 
         if (args.length < 2) {
             return false;
@@ -66,8 +67,12 @@ public class SearchCommand implements TabExecutor {
 
         String[] matcherArgs = new String[args.length - 1];
         System.arraycopy(args, 1, matcherArgs, 0, matcherArgs.length);
-        // TODO verify that matcher is set up with at least 1 valid matching function
         ItemMatcher matcher = getMatcher(matcherArgs);
+
+        if (matcher.isEmpty()) {
+            plugin.sendMessage(sender, "messages.error.search.invalidMatcher");
+            return true;
+        }
 
         new Search(matcher, searchBuckets).schedule(sender, plugin);
         return true;
@@ -79,17 +84,13 @@ public class SearchCommand implements TabExecutor {
     }
 
     private Collection<SearchBucket> getInventories(CommandSender sender, String data) {
-        // TODO split up more, make method less gross
         data = data.toLowerCase(Locale.ROOT);
         String[] bucketArray = data.split(",");
+        List<SearchBucket> buckets = new ArrayList<>();
 
+        // Only one player bucket - offline option will still search online players.
         boolean player = false;
         boolean playerOffline = false;
-        World chunkWorld = null;
-        Integer chunkX = null;
-        Integer chunkZ = null;
-        int chunkRadius = 5;
-        boolean chunkLoad = false;
 
         for (String bucketData : bucketArray) {
             if (bucketData.startsWith("player") && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender)) {
@@ -100,77 +101,87 @@ public class SearchCommand implements TabExecutor {
                 continue;
             }
 
-            if (!bucketData.startsWith("chunk") || !Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender)) {
-                continue;
-            }
+            if (bucketData.startsWith("chunk") && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender)) {
+                ChunkBucket chunkBucket = getChunkBucket(sender, bucketData);
 
-            String[] chunkData = bucketData.split(";");
-
-            if (!(sender instanceof Player)) {
-                if (chunkData.length < 4) {
-                    // Console must specify world, x center, z center.
+                if (chunkBucket == null) {
+                    // Invalid chunk bucket parameters, warn about bucket spec.
                     return Collections.emptyList();
                 }
-            } else {
-                Player senderPlayer = (Player) sender;
-                chunkWorld = senderPlayer.getWorld();
-                Chunk senderChunk = senderPlayer.getLocation().getChunk();
-                chunkX = senderChunk.getX();
-                chunkZ = senderChunk.getZ();
+
+                buckets.add(chunkBucket);
             }
-
-            for (String chunkDatum : chunkData) {
-                String[] datum = chunkDatum.split(":");
-                if (datum.length < 2) {
-                    continue;
-                }
-                String key = datum[0];
-                String value = datum[1];
-
-                if (key.startsWith("w")) {
-                    chunkWorld = Bukkit.getWorld(value);
-                } else if (key.equals("x")) {
-                    try {
-                        chunkX = Integer.parseInt(value);
-                    } catch (NumberFormatException e) {
-                        chunkX = null;
-                    }
-                } else if (key.equals("z")) {
-                    try {
-                        chunkZ = Integer.parseInt(value);
-                    } catch (NumberFormatException e) {
-                        chunkZ = null;
-                    }
-                } else if (key.equals("r")) {
-                    try {
-                        chunkRadius = Integer.parseInt(value);
-                    } catch (NumberFormatException e) {
-                        // Fall through to default radius.
-                    }
-                } else if (key.equals("load")) {
-                    // TODO: migrate a StringUtil#isTruthy to PlanarWrappers? Either way, "yes" "on" etc. should be valid
-                    chunkLoad = Permissions.SEARCH_CHUNKS_UNLOADED.hasPermission(sender) && Boolean.parseBoolean(value);
-                }
-            }
-
-            if (chunkWorld == null || chunkX == null || chunkZ == null) {
-                // Invalid data provided.
-                return Collections.emptyList();
-            }
-
         }
-
-        List<SearchBucket> buckets = new ArrayList<>();
 
         if (player) {
             buckets.add(new PlayerBucket(plugin, !playerOffline));
         }
 
-        if (chunkWorld != null) {
-            buckets.add(new ChunkBucket(plugin, chunkWorld, chunkX, chunkZ, chunkRadius, chunkLoad));
+        return buckets;
+    }
+
+    private @Nullable ChunkBucket getChunkBucket(CommandSender sender, String bucketData) {
+        World world = null;
+        Integer chunkX = null;
+        Integer chunkZ = null;
+        int chunkRadius = 5;
+        boolean chunkLoad = false;
+
+        String[] chunkData = bucketData.split(";");
+
+        if (!(sender instanceof Player)) {
+            if (chunkData.length < 4) {
+                // Console must specify world, x center, z center.
+                return null;
+            }
+        } else {
+            Player senderPlayer = (Player) sender;
+            world = senderPlayer.getWorld();
+            Chunk senderChunk = senderPlayer.getLocation().getChunk();
+            chunkX = senderChunk.getX();
+            chunkZ = senderChunk.getZ();
         }
 
-        return buckets;
+        for (String chunkDatum : chunkData) {
+            String[] datum = chunkDatum.split(":");
+            if (datum.length < 2) {
+                continue;
+            }
+            String key = datum[0];
+            String value = datum[1];
+
+            if (key.startsWith("w")) {
+                world = Bukkit.getWorld(value);
+            } else if (key.equals("x")) {
+                try {
+                    chunkX = Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    chunkX = null;
+                }
+            } else if (key.equals("z")) {
+                try {
+                    chunkZ = Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    chunkZ = null;
+                }
+            } else if (key.startsWith("r")) {
+                try {
+                    chunkRadius = Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    // Fall through to default radius.
+                }
+            } else if (key.equals("load")) {
+                // TODO: migrate a StringUtil#isTruthy to PlanarWrappers? Either way, "yes" "on" etc. should be valid
+                chunkLoad = Permissions.SEARCH_CHUNKS_UNLOADED.hasPermission(sender) && Boolean.parseBoolean(value);
+            }
+        }
+
+        if (world == null || chunkX == null || chunkZ == null) {
+            // Invalid data provided.
+            return null;
+        }
+
+        return new ChunkBucket(plugin, world, chunkX, chunkZ, chunkRadius, chunkLoad);
     }
 
     @Override

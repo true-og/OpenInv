@@ -72,4 +72,8 @@ public class ItemMatcher {
         return true;
     }
 
+    public boolean isEmpty() {
+        return baseOptions.isEmpty() && metaOptions.isEmpty();
+    }
+
 }

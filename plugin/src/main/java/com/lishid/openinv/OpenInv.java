@@ -337,7 +337,7 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
     }
 
     public int getSearchPollsPerTick() {
-        return this.getConfig().getInt("settings.search.polls-per-tick", 20);
+        return this.getConfig().getInt("settings.search.polls-per-tick", 5);
     }
 
     public int getSearchResultsMax() {

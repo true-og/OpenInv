@@ -18,28 +18,30 @@ package com.lishid.openinv.search;
 
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class MatchOptions {
 
-    static MatchOption isType(Material material) {
+    public static MatchOption isType(@NotNull Material material) {
         return itemStack -> itemStack.getType() == material;
     }
 
-    static MatchOption hasAmount(int minAmount) {
+    public static MatchOption hasAmount(int minAmount) {
         return itemStack -> itemStack.getAmount() >= minAmount;
     }
 
-    static MatchMetaOption hasEnchant(Enchantment enchantment, int minLevel) {
+    public static MatchMetaOption hasEnchant(@NotNull Enchantment enchantment, @Nullable Integer minLevel) {
         return itemMeta -> {
             // Is the level unspecific?
-            if (minLevel < 1) {
+            if (minLevel == null) {
                 return itemMeta.hasEnchant(enchantment);
             }
             return itemMeta.getEnchantLevel(enchantment) >= minLevel;
         };
     }
 
-    static MatchMetaOption hasAnyEnchant(int minLevel) {
+    public static MatchMetaOption hasAnyEnchant(int minLevel) {
         return itemMeta -> {
             for (int enchantLevel : itemMeta.getEnchants().values()) {
                 if (enchantLevel >= minLevel) {

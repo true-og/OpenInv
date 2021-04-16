@@ -16,9 +16,13 @@
 
 package com.lishid.openinv.commands;
 
+import com.github.jikoo.planarwrappers.util.StringConverters;
 import com.lishid.openinv.OpenInv;
 import com.lishid.openinv.search.ChunkBucket;
 import com.lishid.openinv.search.ItemMatcher;
+import com.lishid.openinv.search.MatchMetaOption;
+import com.lishid.openinv.search.MatchOption;
+import com.lishid.openinv.search.MatchOptions;
 import com.lishid.openinv.search.PlayerBucket;
 import com.lishid.openinv.search.Search;
 import com.lishid.openinv.search.SearchBucket;
@@ -26,14 +30,19 @@ import com.lishid.openinv.util.Permissions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,24 +61,31 @@ public class SearchCommand implements TabExecutor {
             @NotNull Command command,
             @NotNull String label,
             @NotNull String[] args) {
-        // TODO 1 search active per sender
+        // TODO
+        //  - 1 search active per sender
+        //  - less gross way to deal with parsing options
 
         if (args.length < 2) {
             return false;
         }
 
-        Collection<SearchBucket> searchBuckets = getInventories(sender, args[0]);
+        Map<String, Map<String, String>> argsToDetails = new HashMap<>();
+
+        for (String arg : args) {
+            arg = arg.toLowerCase(Locale.ROOT);
+            argsToDetails.put(arg, getData(arg));
+        }
+
+        Collection<SearchBucket> searchBuckets = getSearchBuckets(sender, argsToDetails);
 
         if (searchBuckets.isEmpty()) {
             plugin.sendMessage(sender, "messages.error.search.invalidInventory");
             return true;
         }
 
-        String[] matcherArgs = new String[args.length - 1];
-        System.arraycopy(args, 1, matcherArgs, 0, matcherArgs.length);
-        ItemMatcher matcher = getMatcher(matcherArgs);
+        ItemMatcher matcher = getMatcher(argsToDetails);
 
-        if (matcher.isEmpty()) {
+        if (matcher == null) {
             plugin.sendMessage(sender, "messages.error.search.invalidMatcher");
             return true;
         }
@@ -78,31 +94,121 @@ public class SearchCommand implements TabExecutor {
         return true;
     }
 
-    private ItemMatcher getMatcher(String[] matcherArgs) {
-        // TODO
-        return new ItemMatcher(Collections.emptyList(), Collections.emptyList());
+    private Map<String, String> getData(String arg) {
+        arg = arg.toLowerCase(Locale.ROOT);
+        String[] matchData = getPseudoJson(arg);
+
+        Map<String, String> data = new HashMap<>();
+        for (String matchDatum : matchData) {
+            String[] datum = matchDatum.split(":");
+            if (datum.length >= 2) {
+                data.put(datum[0], datum[1]);
+            }
+        }
+        return data;
     }
 
-    private Collection<SearchBucket> getInventories(CommandSender sender, String data) {
-        data = data.toLowerCase(Locale.ROOT);
-        String[] bucketArray = data.split(",");
+    private @Nullable ItemMatcher getMatcher(Map<String, Map<String, String>> args) {
+        List<MatchMetaOption> matchMetaOptions = new ArrayList<>();
+        Material type = null;
+        Integer minAmount = null;
+
+        for (Map.Entry<String, Map<String, String>> arg : args.entrySet()) {
+            if (arg.getKey().startsWith("type")) {
+                String typeName = arg.getValue().entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
+                Material material = StringConverters.toMaterial(typeName);
+                if (material == null) {
+                    // Invalid material, warn about matcher spec.
+                    return null;
+                }
+                type = material;
+                continue;
+            }
+
+            if (arg.getKey().startsWith("amount")) {
+                String minAmountString = arg.getValue().entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
+                if (minAmountString == null) {
+                    // Amount not correctly specified. Warn about spec.
+                    return null;
+                }
+                try {
+                    minAmount = Integer.parseInt(minAmountString);
+                } catch (NumberFormatException e) {
+                    // Amount can't be parsed. Warn about spec.
+                    return null;
+                }
+                continue;
+            }
+
+            if (arg.getKey().startsWith("enchant")) {
+                Enchantment enchantment = null;
+                Integer enchantLevel = null;
+                for (Map.Entry<String, String> entry : arg.getValue().entrySet()) {
+                    if (entry.getKey().indexOf('l') >= 0) {
+                        try {
+                            enchantLevel = Integer.parseInt(entry.getValue());
+                        } catch (NumberFormatException e) {
+                            // Level can't be parsed. Warn about spec.
+                            return null;
+                        }
+                    }
+                    if (entry.getKey().indexOf('t') >= 0) {
+                        enchantment = StringConverters.toEnchant(entry.getValue());
+                        if (enchantment == null) {
+                            // Enchantment is specified but can't be parsed. Warn about spec.
+                            return null;
+                        }
+                    }
+                }
+
+                if (enchantment == null) {
+                    if (enchantLevel == null) {
+                        // One of enchantment or level must be specified.
+                        return null;
+                    }
+                    matchMetaOptions.add(MatchOptions.hasAnyEnchant(enchantLevel));
+                    continue;
+                }
+                matchMetaOptions.add(MatchOptions.hasEnchant(enchantment, enchantLevel));
+            }
+        }
+
+        List<MatchOption> matchOptions = new ArrayList<>();
+
+        if (type != null) {
+            matchOptions.add(MatchOptions.isType(type));
+        }
+
+        if (minAmount != null) {
+            matchOptions.add(MatchOptions.hasAmount(minAmount));
+        }
+
+        return new ItemMatcher(matchOptions, matchMetaOptions);
+    }
+
+    private Collection<SearchBucket> getSearchBuckets(CommandSender sender, Map<String, Map<String, String>> args) {
         List<SearchBucket> buckets = new ArrayList<>();
 
         // Only one player bucket - offline option will still search online players.
         boolean player = false;
         boolean playerOffline = false;
 
-        for (String bucketData : bucketArray) {
-            if (bucketData.startsWith("player") && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender)) {
+        for (Map.Entry<String, Map<String, String>> arg : args.entrySet()) {
+            if (arg.getKey().startsWith("player") && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender)) {
                 player = true;
-                if (!playerOffline && bucketData.contains("offline")) {
+                if (playerOffline) {
+                    continue;
+                }
+                Optional<Map.Entry<String, String>> offlineOptional = arg.getValue().entrySet().stream()
+                        .filter(entry -> entry.getKey().contains("offline"))
+                        .findFirst();
+                if (offlineOptional.isPresent() && Boolean.parseBoolean(offlineOptional.get().getValue())) {
                     playerOffline = Permissions.SEARCH_PLAYERS_OFFLINE.hasPermission(sender);
                 }
                 continue;
             }
-
-            if (bucketData.startsWith("chunk") && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender)) {
-                ChunkBucket chunkBucket = getChunkBucket(sender, bucketData);
+            if (arg.getKey().startsWith("chunk") && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender)) {
+                ChunkBucket chunkBucket = getChunkBucket(sender, arg.getValue());
 
                 if (chunkBucket == null) {
                     // Invalid chunk bucket parameters, warn about bucket spec.
@@ -120,17 +226,15 @@ public class SearchCommand implements TabExecutor {
         return buckets;
     }
 
-    private @Nullable ChunkBucket getChunkBucket(CommandSender sender, String bucketData) {
+    private @Nullable ChunkBucket getChunkBucket(CommandSender sender, Map<String, String> bucketData) {
         World world = null;
         Integer chunkX = null;
         Integer chunkZ = null;
         int chunkRadius = 5;
         boolean chunkLoad = false;
 
-        String[] chunkData = bucketData.split(";");
-
         if (!(sender instanceof Player)) {
-            if (chunkData.length < 4) {
+            if (bucketData.size() < 3) {
                 // Console must specify world, x center, z center.
                 return null;
             }
@@ -142,46 +246,88 @@ public class SearchCommand implements TabExecutor {
             chunkZ = senderChunk.getZ();
         }
 
-        for (String chunkDatum : chunkData) {
-            String[] datum = chunkDatum.split(":");
-            if (datum.length < 2) {
-                continue;
-            }
-            String key = datum[0];
-            String value = datum[1];
+        for (Map.Entry<String, String> entry : bucketData.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
 
-            if (key.startsWith("w")) {
-                world = Bukkit.getWorld(value);
-            } else if (key.equals("x")) {
+            if (key.indexOf('w') >= 0) {
+                world = null;
+                // Name should always be lower case by this point. Ignore case when selecting world.
+                for (World loaded : Bukkit.getWorlds()) {
+                    if (loaded.getName().equalsIgnoreCase(value)) {
+                        world = loaded;
+                        break;
+                    }
+                }
+            } else if (key.indexOf('x') >= 0) {
                 try {
                     chunkX = Integer.parseInt(value);
                 } catch (NumberFormatException e) {
                     chunkX = null;
                 }
-            } else if (key.equals("z")) {
+            } else if (key.indexOf('z') >= 0) {
                 try {
                     chunkZ = Integer.parseInt(value);
                 } catch (NumberFormatException e) {
                     chunkZ = null;
                 }
-            } else if (key.startsWith("r")) {
+            } else if (key.indexOf('r') >= 0) {
+                // R is for radius. Needs to be checked later so that "world" doesn't result in a false positive.
                 try {
                     chunkRadius = Integer.parseInt(value);
                 } catch (NumberFormatException e) {
                     // Fall through to default radius.
                 }
-            } else if (key.equals("load")) {
-                // TODO: migrate a StringUtil#isTruthy to PlanarWrappers? Either way, "yes" "on" etc. should be valid
+            } else if (key.indexOf('l') >= 0) {
+                // L is for loaded. Needs to be checked later so that "world" doesn't result in a false positive.
                 chunkLoad = Permissions.SEARCH_CHUNKS_UNLOADED.hasPermission(sender) && Boolean.parseBoolean(value);
             }
         }
 
-        if (world == null || chunkX == null || chunkZ == null) {
+        if (world == null || chunkX == null || chunkZ == null || chunkRadius < 0) {
             // Invalid data provided.
             return null;
         }
 
         return new ChunkBucket(plugin, world, chunkX, chunkZ, chunkRadius, chunkLoad);
+    }
+
+    /**
+     * Helper method for parsing JSON-like syntax attached to parameters.
+     *
+     * <p>Ex: A ChunkBucket can be expressed <code>chunks{world:world_name,x:0,z:0,radius:10,load:true}</code>. The
+     * starting "chunks" identifies it as a ChunkBucket and the content in braces contains the construction detail.
+     * However, a simpler detail, such as a MatchOption, may be specified <code>type:IRON_SWORD</code> where "type"
+     * is both the identifier of the MatchOption and the key of the sole value.
+     *
+     * <p>A best-effort will be made to match other start and finish demarcation techniques.
+     *
+     * @param data the data string
+     * @return the data mappings
+     */
+    private String[] getPseudoJson(String data) {
+        // Try for curly braces first.
+        int open = data.indexOf('{');
+        int close = data.indexOf('}');
+
+        // If not present, try for brackets.
+        if (open < 0) {
+            open = data.indexOf('[');
+            close = data.indexOf(']');
+        }
+
+        // Last try, parentheses.
+        if (open < 0) {
+            open = data.indexOf('(');
+            close = data.indexOf(')');
+        }
+
+        // Use only bracketed content
+        if (open >= 0 && close > open) {
+            data = data.substring(open + 1, close - 1);
+        }
+
+        return data.split(",");
     }
 
     @Override

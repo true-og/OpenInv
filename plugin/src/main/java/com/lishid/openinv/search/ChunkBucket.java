@@ -18,7 +18,6 @@ package com.lishid.openinv.search;
 
 import com.github.jikoo.planarwrappers.tuple.Pair;
 import com.lishid.openinv.OpenInv;
-import io.papermc.lib.PaperLib;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +34,7 @@ public class ChunkBucket implements SearchBucket {
     private final boolean load;
     private final List<Pair<Integer, Integer>> chunks;
     protected int index = -1;
+    private Boolean paper = null;
 
     public ChunkBucket(@NotNull OpenInv plugin, @NotNull World world, int chunkX, int chunkZ, int radius, boolean load) {
         this.plugin = plugin;
@@ -58,11 +58,11 @@ public class ChunkBucket implements SearchBucket {
         }
 
         // If async chunk loading is not available, load chunk when checking.
-        if (!PaperLib.isPaper()) {
+        if (!isPaper()) {
             return new MatchableChunk(plugin, world, chunkCoords.getLeft(), chunkCoords.getRight());
         }
 
-        CompletableFuture<Chunk> chunkAt = PaperLib.getChunkAtAsync(world, chunkCoords.getLeft(), chunkCoords.getRight());
+        CompletableFuture<Chunk> chunkAt = world.getChunkAtAsync(chunkCoords.getLeft(), chunkCoords.getRight());
 
         Chunk chunk;
         try {
@@ -75,6 +75,20 @@ public class ChunkBucket implements SearchBucket {
         chunk.addPluginChunkTicket(plugin);
 
         return new MatchableChunk(plugin, chunk);
+    }
+
+    private boolean isPaper() {
+        if (paper == null) {
+            try {
+                // Check for Paper.
+                Class.forName("com.destroystokyo.paper.PaperConfig");
+                paper = true;
+            } catch (ClassNotFoundException e) {
+                paper = false;
+            }
+        }
+
+        return paper;
     }
 
     @Override

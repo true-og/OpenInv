@@ -31,23 +31,30 @@ public class MatchOptions {
         return itemStack -> itemStack.getAmount() >= minAmount;
     }
 
-    public static MatchMetaOption hasEnchant(@NotNull Enchantment enchantment, @Nullable Integer minLevel) {
+    public static MatchMetaOption hasEnchant(@Nullable Enchantment enchantment, @Nullable Integer minLevel) {
         return itemMeta -> {
-            // Is the level unspecific?
             if (minLevel == null) {
+                if (enchantment == null) {
+                    // Level and enchantment not specified, any enchantment of any level matches.
+                    return !itemMeta.getEnchants().isEmpty();
+                }
+
+                // Level not specified, any level of enchantment matches.
                 return itemMeta.hasEnchant(enchantment);
             }
-            return itemMeta.getEnchantLevel(enchantment) >= minLevel;
-        };
-    }
 
-    public static MatchMetaOption hasAnyEnchant(int minLevel) {
-        return itemMeta -> {
+            if (enchantment != null) {
+                // Level and enchantment are specified, enchantment must meet or exceed level.
+                return itemMeta.getEnchantLevel(enchantment) >= minLevel;
+            }
+
+            // Enchantment not specified, any enchantment that meets or exceeds level matches.
             for (int enchantLevel : itemMeta.getEnchants().values()) {
                 if (enchantLevel >= minLevel) {
                     return true;
                 }
             }
+
             return false;
         };
     }

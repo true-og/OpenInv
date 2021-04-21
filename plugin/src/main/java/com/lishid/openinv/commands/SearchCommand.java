@@ -161,14 +161,6 @@ public class SearchCommand implements TabExecutor {
                     }
                 }
 
-                if (enchantment == null) {
-                    if (enchantLevel == null) {
-                        // One of enchantment or level must be specified.
-                        return null;
-                    }
-                    matchMetaOptions.add(MatchOptions.hasAnyEnchant(enchantLevel));
-                    continue;
-                }
                 matchMetaOptions.add(MatchOptions.hasEnchant(enchantment, enchantLevel));
             }
         }

@@ -20,10 +20,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.lishid</groupId>
     <artifactId>openinvparent</artifactId>
-    <version>4.1.7-SNAPSHOT</version>
+    <groupId>com.lishid</groupId>
     <relativePath>../../pom.xml</relativePath>
+    <version>4.1.7-SNAPSHOT</version>
   </parent>
 
   <artifactId>openinvadapter1_16_R3</artifactId>
@@ -31,26 +31,22 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.spigotmc</groupId>
       <artifactId>spigot</artifactId>
-      <version>1.16.5-R0.1-SNAPSHOT</version>
+      <groupId>org.spigotmc</groupId>
       <scope>provided</scope>
+      <version>1.16.5-R0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>com.lishid</groupId>
       <artifactId>openinvapi</artifactId>
-      <version>4.1.7-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>com.lishid</groupId>
-      <artifactId>openinvplugincore</artifactId>
-      <version>4.1.7-SNAPSHOT</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.jetbrains</groupId>
+      <artifactId>openinvplugincore</artifactId>
+      <groupId>com.lishid</groupId>
+    </dependency>
+    <dependency>
       <artifactId>annotations</artifactId>
+      <groupId>org.jetbrains</groupId>
     </dependency>
   </dependencies>
 

@@ -19,8 +19,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.lishid</groupId>
     <artifactId>openinvparent</artifactId>
+    <groupId>com.lishid</groupId>
     <version>4.1.7-SNAPSHOT</version>
   </parent>
 
@@ -31,8 +31,6 @@
     <dependency>
       <artifactId>openinvapi</artifactId>
       <groupId>com.lishid</groupId>
-      <scope>compile</scope>
-      <version>4.1.7-SNAPSHOT</version>
     </dependency>
     <dependency>
       <artifactId>paper-api</artifactId>

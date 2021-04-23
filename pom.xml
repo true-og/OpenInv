@@ -73,31 +73,37 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.jetbrains</groupId>
         <artifactId>annotations</artifactId>
+        <groupId>org.jetbrains</groupId>
+        <scope>provided</scope>
         <version>20.1.0</version>
-        <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.spigotmc</groupId>
-        <artifactId>spigot-api</artifactId>
-        <version>1.16.5-R0.1-SNAPSHOT</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.destroystokyo.paper</groupId>
         <artifactId>paper-api</artifactId>
-        <version>1.16.5-R0.1-SNAPSHOT</version>
+        <groupId>com.destroystokyo.paper</groupId>
         <scope>provided</scope>
+        <version>1.16.5-R0.1-SNAPSHOT</version>
       </dependency>
       <dependency>
-        <groupId>com.github.jikoo</groupId>
+        <artifactId>spigot-api</artifactId>
+        <groupId>org.spigotmc</groupId>
+        <scope>provided</scope>
+        <version>1.16.5-R0.1-SNAPSHOT</version>
+      </dependency>
+      <dependency>
         <artifactId>planarwrappers</artifactId>
-        <version>2.1.0</version>
+        <groupId>com.github.jikoo</groupId>
         <scope>compile</scope>
+        <version>2.1.0</version>
       </dependency>
       <dependency>
         <artifactId>openinvapi</artifactId>
+        <groupId>com.lishid</groupId>
+        <scope>compile</scope>
+        <version>4.1.7-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <artifactId>openinvplugincore</artifactId>
         <groupId>com.lishid</groupId>
         <scope>compile</scope>
         <version>4.1.7-SNAPSHOT</version>
@@ -110,9 +116,7 @@
       <plugins>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
-          <groupId>org.apache.maven.plugins</groupId>
           <configuration>
-            <minimizeJar>true</minimizeJar>
             <filters>
               <filter>
                 <!-- Always shade entirety of required modules. -->
@@ -129,6 +133,7 @@
                 </excludes>
               </filter>
             </filters>
+            <minimizeJar>true</minimizeJar>
           </configuration>
           <executions>
             <execution>
@@ -138,6 +143,7 @@
               </goals>
             </execution>
           </executions>
+          <groupId>org.apache.maven.plugins</groupId>
           <version>3.2.4</version>
         </plugin>
 
@@ -148,8 +154,8 @@
         </plugin>
 
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-assembly-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
           <version>3.3.0</version>
         </plugin>
       </plugins>

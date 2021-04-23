@@ -104,7 +104,7 @@ See [the wiki](https://github.com/Jikoo/OpenInv/wiki/Commands).
 ## For Developers
 
 ### As a Dependency
-OpenInv's API is available via [JitPack](https://jitpack.io/).
+The OpenInv API is available via [JitPack](https://jitpack.io/).
 ```xml
   <repositories>
     <repository>

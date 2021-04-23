@@ -29,12 +29,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
+      <groupId>org.jetbrains</groupId>
     </dependency>
     <dependency>
-      <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
+      <groupId>org.spigotmc</groupId>
     </dependency>
   </dependencies>
 

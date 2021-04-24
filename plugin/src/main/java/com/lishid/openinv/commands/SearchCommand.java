@@ -175,6 +175,10 @@ public class SearchCommand implements TabExecutor {
             matchOptions.add(MatchOptions.hasAmount(minAmount));
         }
 
+        if (matchOptions.isEmpty()) {
+            return null;
+        }
+
         return new ItemMatcher(matchOptions, matchMetaOptions);
     }
 
@@ -191,10 +195,12 @@ public class SearchCommand implements TabExecutor {
                 if (playerOffline) {
                     continue;
                 }
-                Optional<Map.Entry<String, String>> offlineOptional = arg.getValue().entrySet().stream()
+                Optional<Boolean> optional = arg.getValue().entrySet().stream()
                         .filter(entry -> entry.getKey().contains("offline"))
-                        .findFirst();
-                if (offlineOptional.isPresent() && Boolean.parseBoolean(offlineOptional.get().getValue())) {
+                        .findFirst()
+                        .map(Map.Entry::getValue)
+                        .map(Boolean::parseBoolean);
+                if (optional.orElse(false)) {
                     playerOffline = Permissions.SEARCH_PLAYERS_OFFLINE.hasPermission(sender);
                 }
                 continue;
@@ -281,7 +287,7 @@ public class SearchCommand implements TabExecutor {
             return null;
         }
 
-        return new ChunkBucket(plugin, world, chunkX, chunkZ, chunkRadius, chunkLoad);
+        return new ChunkBucket(world, chunkX, chunkZ, chunkRadius, chunkLoad);
     }
 
     /**
@@ -316,7 +322,7 @@ public class SearchCommand implements TabExecutor {
 
         // Use only bracketed content
         if (open >= 0 && close > open) {
-            data = data.substring(open + 1, close - 1);
+            data = data.substring(open + 1, close);
         }
 
         return data.split(",");

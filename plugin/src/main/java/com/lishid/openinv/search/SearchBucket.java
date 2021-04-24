@@ -26,8 +26,4 @@ public interface SearchBucket {
 
     int size();
 
-    default void cleanUp() {
-        // Do nothing by default.
-    }
-
 }

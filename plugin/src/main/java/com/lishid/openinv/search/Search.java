@@ -43,7 +43,6 @@ public class Search {
     public static final BaseComponent SEPARATOR = new TextComponent(", ");
 
     private final Set<MessagePart> matches = new HashSet<>();
-    private final Set<SearchBucket> bucketSet;
     private final ItemMatcher matcher;
     private final double totalMatchables;
     private final Iterator<SearchBucket> bucketIterator;
@@ -54,7 +53,7 @@ public class Search {
             @NotNull ItemMatcher matcher,
             @NotNull Collection<@NotNull SearchBucket> buckets) {
         // Just in case, copy contents to new set.
-        this.bucketSet = new HashSet<>(buckets);
+        Set<SearchBucket> bucketSet = new HashSet<>(buckets);
         this.matcher = matcher;
         this.totalMatchables = bucketSet.stream().mapToInt(SearchBucket::size).sum();
         this.bucketIterator = bucketSet.iterator();
@@ -128,6 +127,7 @@ public class Search {
                 localizedMessage = "No items found with search parameters.";
             }
             sender.sendMessage(localizedMessage);
+            return;
         }
 
         String prefix = plugin.getLocalizedMessage(sender, "messages.info.search.matches");
@@ -154,6 +154,10 @@ public class Search {
                  }
             }
 
+            // Paper deprecated Spigot's message API.
+            // This is a risky deprecation ignore - Spigot may eventually do the sane thing
+            // and just add a method accepting components to the player directly.
+            //noinspection deprecation
             sender.spigot().sendMessage(textComponent);
             return;
         }
@@ -165,19 +169,23 @@ public class Search {
         sender.sendMessage(message);
     }
 
-    private void cleanUp(OpenInv plugin) {
-        plugin.getServer().getScheduler().runTask(plugin, () -> bucketSet.forEach(SearchBucket::cleanUp));
-    }
-
     public void schedule(CommandSender sender, OpenInv plugin) {
         new BukkitRunnable() {
             @Override
             public void run() {
+                // Scheduler struggles to cancel async tasks with high frequency.
+                if (isCancelled()) {
+                    return;
+                }
+
                 poll(plugin);
 
                 if (isComplete(plugin)) {
+                    if (isCancelled()) {
+                        return;
+                    }
+
                     sendResults(sender, plugin);
-                    cleanUp(plugin);
                     cancel();
                     return;
                 }

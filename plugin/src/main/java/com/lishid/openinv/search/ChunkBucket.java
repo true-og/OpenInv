@@ -17,7 +17,6 @@
 package com.lishid.openinv.search;
 
 import com.github.jikoo.planarwrappers.tuple.Pair;
-import com.lishid.openinv.OpenInv;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,15 +28,13 @@ import org.jetbrains.annotations.NotNull;
 
 public class ChunkBucket implements SearchBucket {
 
-    private final OpenInv plugin;
     private final World world;
     private final boolean load;
     private final List<Pair<Integer, Integer>> chunks;
     protected int index = -1;
     private Boolean paper = null;
 
-    public ChunkBucket(@NotNull OpenInv plugin, @NotNull World world, int chunkX, int chunkZ, int radius, boolean load) {
-        this.plugin = plugin;
+    public ChunkBucket(@NotNull World world, int chunkX, int chunkZ, int radius, boolean load) {
         this.world = world;
         this.load = load;
         this.chunks = new ArrayList<>();
@@ -59,7 +56,7 @@ public class ChunkBucket implements SearchBucket {
 
         // If async chunk loading is not available, load chunk when checking.
         if (!isPaper()) {
-            return new MatchableChunk(plugin, world, chunkCoords.getLeft(), chunkCoords.getRight());
+            return new MatchableChunk(world, chunkCoords.getLeft(), chunkCoords.getRight());
         }
 
         CompletableFuture<Chunk> chunkAt = world.getChunkAtAsync(chunkCoords.getLeft(), chunkCoords.getRight());
@@ -71,10 +68,7 @@ public class ChunkBucket implements SearchBucket {
             return matcher -> MatchResult.NO_MATCH;
         }
 
-        // Ensure chunk won't unload until we search it during next server tick.
-        chunk.addPluginChunkTicket(plugin);
-
-        return new MatchableChunk(plugin, chunk);
+        return new MatchableChunk(chunk);
     }
 
     private boolean isPaper() {
@@ -101,13 +95,6 @@ public class ChunkBucket implements SearchBucket {
         return chunks.size();
     }
 
-    @Override
-    public void cleanUp() {
-        // Just in case, remove all chunk tickets after search completion.
-        for (Chunk loadedChunk : world.getLoadedChunks()) {
-            loadedChunk.removePluginChunkTicket(plugin);
-        }
-    }
     /**
      * Produce a series of integer coordinates starting at 0, 0 that extend outward to form a centered square,
      * producing closer proximity results sooner than a traditional double for loop from min to max.

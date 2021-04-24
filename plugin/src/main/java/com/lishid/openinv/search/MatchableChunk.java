@@ -16,7 +16,6 @@
 
 package com.lishid.openinv.search;
 
-import com.lishid.openinv.OpenInv;
 import com.lishid.openinv.util.MessagePart;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,19 +34,16 @@ import org.jetbrains.annotations.NotNull;
 
 class MatchableChunk implements Matchable {
 
-    private final OpenInv plugin;
     private Chunk chunk;
     private World world;
     private int chunkX;
     private int chunkZ;
 
-    MatchableChunk(@NotNull OpenInv plugin, @NotNull Chunk chunk) {
-        this.plugin = plugin;
+    MatchableChunk(@NotNull Chunk chunk) {
         this.chunk = chunk;
     }
 
-    MatchableChunk(@NotNull OpenInv plugin, @NotNull World world, int chunkX, int chunkZ) {
-        this.plugin = plugin;
+    MatchableChunk(@NotNull World world, int chunkX, int chunkZ) {
         this.world = world;
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
@@ -79,8 +75,6 @@ class MatchableChunk implements Matchable {
             }
         }
 
-        getChunk().removePluginChunkTicket(plugin);
-
         if (blocks.isEmpty()) {
             return MatchResult.NO_MATCH;
         }
@@ -106,7 +100,7 @@ class MatchableChunk implements Matchable {
         component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command));
 
         String hover = String.format(
-                "%s @ %s: %sx, %sy, %sz\n\nClick to teleport.",
+                "%s{world:%s,x:%s,y:%s,z:%s}\n\nClick to teleport.",
                 state.getType().getKey(),
                 state.getWorld().getName(),
                 state.getX(),
@@ -120,10 +114,11 @@ class MatchableChunk implements Matchable {
 
     private static String getString(BlockState state) {
         return String.format(
-                "%s @ %s: %sx %sy %sz",
+                "%s{world:%s,x:%s,y:%s,z:%s}",
                 state.getType().getKey(),
                 state.getWorld().getName(),
-                state.getX(), state.getY(),
+                state.getX(),
+                state.getY(),
                 state.getZ());
     }
 

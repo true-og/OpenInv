@@ -27,12 +27,12 @@ import com.lishid.openinv.search.PlayerBucket;
 import com.lishid.openinv.search.Search;
 import com.lishid.openinv.search.SearchBucket;
 import com.lishid.openinv.util.Permissions;
+import com.lishid.openinv.util.PseudoJson;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.bukkit.Bukkit;
@@ -69,21 +69,19 @@ public class SearchCommand implements TabExecutor {
             return false;
         }
 
-        Map<String, Map<String, String>> argsToDetails = new HashMap<>();
-
+        Collection<PseudoJson> arguments = new HashSet<>();
         for (String arg : args) {
-            arg = arg.toLowerCase(Locale.ROOT);
-            argsToDetails.put(arg, getData(arg));
+            arguments.add(PseudoJson.fromString(arg));
         }
 
-        Collection<SearchBucket> searchBuckets = getSearchBuckets(sender, argsToDetails);
+        Collection<SearchBucket> searchBuckets = getSearchBuckets(sender, arguments);
 
         if (searchBuckets.isEmpty()) {
             plugin.sendMessage(sender, "messages.error.search.invalidInventory");
             return true;
         }
 
-        ItemMatcher matcher = getMatcher(argsToDetails);
+        ItemMatcher matcher = getMatcher(arguments);
 
         if (matcher == null) {
             plugin.sendMessage(sender, "messages.error.search.invalidMatcher");
@@ -94,28 +92,14 @@ public class SearchCommand implements TabExecutor {
         return true;
     }
 
-    private Map<String, String> getData(String arg) {
-        arg = arg.toLowerCase(Locale.ROOT);
-        String[] matchData = getPseudoJson(arg);
-
-        Map<String, String> data = new HashMap<>();
-        for (String matchDatum : matchData) {
-            String[] datum = matchDatum.split(":");
-            if (datum.length >= 2) {
-                data.put(datum[0], datum[1]);
-            }
-        }
-        return data;
-    }
-
-    private @Nullable ItemMatcher getMatcher(Map<String, Map<String, String>> args) {
+    private @Nullable ItemMatcher getMatcher(Collection<PseudoJson> args) {
         List<MatchMetaOption> matchMetaOptions = new ArrayList<>();
         Material type = null;
         Integer minAmount = null;
 
-        for (Map.Entry<String, Map<String, String>> arg : args.entrySet()) {
-            if (arg.getKey().startsWith("type")) {
-                String typeName = arg.getValue().entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
+        for (PseudoJson arg : args) {
+            if (arg.getIdentifier().startsWith("type")) {
+                String typeName = arg.getMappings().entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
                 Material material = StringConverters.toMaterial(typeName);
                 if (material == null) {
                     // Invalid material, warn about matcher spec.
@@ -125,8 +109,8 @@ public class SearchCommand implements TabExecutor {
                 continue;
             }
 
-            if (arg.getKey().startsWith("amount")) {
-                String minAmountString = arg.getValue().entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
+            if (arg.getIdentifier().startsWith("amount")) {
+                String minAmountString = arg.getMappings().entrySet().stream().findFirst().map(Map.Entry::getValue).orElse(null);
                 if (minAmountString == null) {
                     // Amount not correctly specified. Warn about spec.
                     return null;
@@ -140,10 +124,10 @@ public class SearchCommand implements TabExecutor {
                 continue;
             }
 
-            if (arg.getKey().startsWith("enchant")) {
+            if (arg.getIdentifier().startsWith("enchant")) {
                 Enchantment enchantment = null;
                 Integer enchantLevel = null;
-                for (Map.Entry<String, String> entry : arg.getValue().entrySet()) {
+                for (Map.Entry<String, String> entry : arg.getMappings().entrySet()) {
                     if (entry.getKey().indexOf('l') >= 0) {
                         try {
                             enchantLevel = Integer.parseInt(entry.getValue());
@@ -182,20 +166,20 @@ public class SearchCommand implements TabExecutor {
         return new ItemMatcher(matchOptions, matchMetaOptions);
     }
 
-    private Collection<SearchBucket> getSearchBuckets(CommandSender sender, Map<String, Map<String, String>> args) {
+    private Collection<SearchBucket> getSearchBuckets(CommandSender sender, Collection<PseudoJson> args) {
         List<SearchBucket> buckets = new ArrayList<>();
 
         // Only one player bucket - offline option will still search online players.
         boolean player = false;
         boolean playerOffline = false;
 
-        for (Map.Entry<String, Map<String, String>> arg : args.entrySet()) {
-            if (arg.getKey().startsWith("player") && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender)) {
+        for (PseudoJson arg : args) {
+            if (arg.getIdentifier().startsWith("player") && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender)) {
                 player = true;
                 if (playerOffline) {
                     continue;
                 }
-                Optional<Boolean> optional = arg.getValue().entrySet().stream()
+                Optional<Boolean> optional = arg.getMappings().entrySet().stream()
                         .filter(entry -> entry.getKey().contains("offline"))
                         .findFirst()
                         .map(Map.Entry::getValue)
@@ -205,8 +189,8 @@ public class SearchCommand implements TabExecutor {
                 }
                 continue;
             }
-            if (arg.getKey().startsWith("chunk") && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender)) {
-                ChunkBucket chunkBucket = getChunkBucket(sender, arg.getValue());
+            if (arg.getIdentifier().startsWith("chunk") && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender)) {
+                ChunkBucket chunkBucket = getChunkBucket(sender, arg);
 
                 if (chunkBucket == null) {
                     // Invalid chunk bucket parameters, warn about bucket spec.
@@ -224,15 +208,16 @@ public class SearchCommand implements TabExecutor {
         return buckets;
     }
 
-    private @Nullable ChunkBucket getChunkBucket(CommandSender sender, Map<String, String> bucketData) {
+    private @Nullable ChunkBucket getChunkBucket(CommandSender sender, PseudoJson bucketData) {
         World world = null;
         Integer chunkX = null;
         Integer chunkZ = null;
         int chunkRadius = 5;
         boolean chunkLoad = false;
+        Map<String, String> mappings = bucketData.getMappings();
 
         if (!(sender instanceof Player)) {
-            if (bucketData.size() < 3) {
+            if (mappings.size() < 3) {
                 // Console must specify world, x center, z center.
                 return null;
             }
@@ -244,7 +229,7 @@ public class SearchCommand implements TabExecutor {
             chunkZ = senderChunk.getZ();
         }
 
-        for (Map.Entry<String, String> entry : bucketData.entrySet()) {
+        for (Map.Entry<String, String> entry : mappings.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
 
@@ -288,44 +273,6 @@ public class SearchCommand implements TabExecutor {
         }
 
         return new ChunkBucket(world, chunkX, chunkZ, chunkRadius, chunkLoad);
-    }
-
-    /**
-     * Helper method for parsing JSON-like syntax attached to parameters.
-     *
-     * <p>Ex: A ChunkBucket can be expressed <code>chunks{world:world_name,x:0,z:0,radius:10,load:true}</code>. The
-     * starting "chunks" identifies it as a ChunkBucket and the content in braces contains the construction detail.
-     * However, a simpler detail, such as a MatchOption, may be specified <code>type:IRON_SWORD</code> where "type"
-     * is both the identifier of the MatchOption and the key of the sole value.
-     *
-     * <p>A best-effort will be made to match other start and finish demarcation techniques.
-     *
-     * @param data the data string
-     * @return the data mappings
-     */
-    private String[] getPseudoJson(String data) {
-        // Try for curly braces first.
-        int open = data.indexOf('{');
-        int close = data.indexOf('}');
-
-        // If not present, try for brackets.
-        if (open < 0) {
-            open = data.indexOf('[');
-            close = data.indexOf(']');
-        }
-
-        // Last try, parentheses.
-        if (open < 0) {
-            open = data.indexOf('(');
-            close = data.indexOf(')');
-        }
-
-        // Use only bracketed content
-        if (open >= 0 && close > open) {
-            data = data.substring(open + 1, close);
-        }
-
-        return data.split(",");
     }
 
     @Override

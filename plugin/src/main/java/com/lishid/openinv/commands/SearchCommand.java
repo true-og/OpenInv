@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -50,6 +51,7 @@ import org.jetbrains.annotations.Nullable;
 public class SearchCommand implements TabExecutor {
 
     private final OpenInv plugin;
+    private final Collection<String> activeSearches = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public SearchCommand(OpenInv plugin) {
         this.plugin = plugin;
@@ -62,11 +64,17 @@ public class SearchCommand implements TabExecutor {
             @NotNull String label,
             @NotNull String[] args) {
         // TODO
-        //  - 1 search active per sender
         //  - less gross way to deal with parsing options
 
         if (args.length < 2) {
             return false;
+        }
+
+        String id = sender instanceof Player ? plugin.getPlayerID((Player) sender) : "CONSOLE";
+
+        if (activeSearches.contains(id)) {
+            plugin.sendMessage(sender, "messages.error.search.activeSearch");
+            return true;
         }
 
         Collection<PseudoJson> arguments = new HashSet<>();
@@ -88,7 +96,10 @@ public class SearchCommand implements TabExecutor {
             return true;
         }
 
-        new Search(matcher, searchBuckets).schedule(sender, plugin);
+        activeSearches.add(id);
+
+        new Search(matcher, searchBuckets, () -> activeSearches.remove(id)).schedule(sender, plugin);
+
         return true;
     }
 

@@ -5,6 +5,7 @@ messages:
     search:
       invalidInventory: '&cUnable to determine target inventories. Try using tab completion!'
       invalidMatcher: '&cUnable to determine target item parameters. Try using tab completion!'
+      activeSearch: '&cPlease wait for your search to complete before starting another.'
     invalidMaterial: '&cInvalid material: "%target%"'
     invalidNumber: '&cInvalid number: "%target%"'
     invalidPlayer: '&cPlayer not found!'

@@ -34,6 +34,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A search function.
@@ -46,17 +47,20 @@ public class Search {
     private final ItemMatcher matcher;
     private final double totalMatchables;
     private final Iterator<SearchBucket> bucketIterator;
+    private final Runnable callback;
     private SearchBucket current = null;
     private int polls = 0;
 
     public Search(
             @NotNull ItemMatcher matcher,
-            @NotNull Collection<@NotNull SearchBucket> buckets) {
+            @NotNull Collection<@NotNull SearchBucket> buckets,
+            @Nullable Runnable callback) {
         // Just in case, copy contents to new set.
         Set<SearchBucket> bucketSet = new HashSet<>(buckets);
         this.matcher = matcher;
         this.totalMatchables = bucketSet.stream().mapToInt(SearchBucket::size).sum();
         this.bucketIterator = bucketSet.iterator();
+        this.callback = callback;
     }
 
     private boolean isComplete(OpenInv plugin) {
@@ -187,6 +191,10 @@ public class Search {
 
                     sendResults(sender, plugin);
                     cancel();
+
+                    if (callback != null) {
+                        callback.run();
+                    }
                     return;
                 }
 

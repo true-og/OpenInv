@@ -55,7 +55,11 @@ public class PseudoJson {
     private final String identifier;
     private final Map<String, String> mappings;
 
-    private PseudoJson(@NotNull String identifier, @NotNull Map<String, String> mappings) {
+    public PseudoJson(@NotNull String identifier) {
+        this(identifier, new HashMap<>());
+    }
+
+    public PseudoJson(@NotNull String identifier, @NotNull Map<String, String> mappings) {
         this.identifier = identifier;
         this.mappings = mappings;
     }

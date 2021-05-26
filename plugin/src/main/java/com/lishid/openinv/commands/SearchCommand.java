@@ -18,15 +18,16 @@ package com.lishid.openinv.commands;
 
 import com.github.jikoo.planarwrappers.util.StringConverters;
 import com.lishid.openinv.OpenInv;
-import com.lishid.openinv.search.ChunkBucket;
+import com.lishid.openinv.commands.search.ChunkSearchOption;
+import com.lishid.openinv.commands.search.CompletableOption;
+import com.lishid.openinv.commands.search.PlayerSearchOption;
+import com.lishid.openinv.commands.search.PseudoOption;
 import com.lishid.openinv.search.ItemMatcher;
 import com.lishid.openinv.search.MatchMetaOption;
 import com.lishid.openinv.search.MatchOption;
 import com.lishid.openinv.search.MatchOptions;
-import com.lishid.openinv.search.PlayerBucket;
 import com.lishid.openinv.search.Search;
 import com.lishid.openinv.search.SearchBucket;
-import com.lishid.openinv.util.Permissions;
 import com.lishid.openinv.util.PseudoJson;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,12 +35,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
+import java.util.stream.Collectors;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -53,8 +51,15 @@ public class SearchCommand implements TabExecutor {
     private final OpenInv plugin;
     private final Collection<String> activeSearches = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
+    private final Collection<CompletableOption<? extends SearchBucket>> completableSearchBuckets = new HashSet<>();
+    private final Collection<CompletableOption<MatchOption>> completableMatchOptions = new HashSet<>();
+    private final Collection<CompletableOption<MatchMetaOption>> completableMatchMetaOptions = new HashSet<>();
+
     public SearchCommand(OpenInv plugin) {
         this.plugin = plugin;
+
+        this.completableSearchBuckets.add(new ChunkSearchOption());
+        this.completableSearchBuckets.add(new PlayerSearchOption(plugin));
     }
 
     @Override
@@ -178,112 +183,41 @@ public class SearchCommand implements TabExecutor {
     }
 
     private Collection<SearchBucket> getSearchBuckets(CommandSender sender, Collection<PseudoJson> args) {
-        List<SearchBucket> buckets = new ArrayList<>();
-
-        // Only one player bucket - offline option will still search online players.
-        boolean player = false;
-        boolean playerOffline = false;
+        List<PseudoOption<? extends SearchBucket>> buckets = new ArrayList<>();
 
         for (PseudoJson arg : args) {
-            if (arg.getIdentifier().startsWith("player") && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender)) {
-                player = true;
-                if (playerOffline) {
-                    continue;
-                }
-                Optional<Boolean> optional = arg.getMappings().entrySet().stream()
-                        .filter(entry -> entry.getKey().contains("offline"))
-                        .findFirst()
-                        .map(Map.Entry::getValue)
-                        .map(Boolean::parseBoolean);
-                if (optional.orElse(false)) {
-                    playerOffline = Permissions.SEARCH_PLAYERS_OFFLINE.hasPermission(sender);
-                }
-                continue;
-            }
-            if (arg.getIdentifier().startsWith("chunk") && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender)) {
-                ChunkBucket chunkBucket = getChunkBucket(sender, arg);
-
-                if (chunkBucket == null) {
-                    // Invalid chunk bucket parameters, warn about bucket spec.
-                    return Collections.emptyList();
-                }
-
-                buckets.add(chunkBucket);
-            }
-        }
-
-        if (player) {
-            buckets.add(new PlayerBucket(plugin, !playerOffline));
-        }
-
-        return buckets;
-    }
-
-    private @Nullable ChunkBucket getChunkBucket(CommandSender sender, PseudoJson bucketData) {
-        World world = null;
-        Integer chunkX = null;
-        Integer chunkZ = null;
-        int chunkRadius = 5;
-        boolean chunkLoad = false;
-        Map<String, String> mappings = bucketData.getMappings();
-
-        if (!(sender instanceof Player)) {
-            if (mappings.size() < 3) {
-                // Console must specify world, x center, z center.
-                return null;
-            }
-        } else {
-            Player senderPlayer = (Player) sender;
-            world = senderPlayer.getWorld();
-            Chunk senderChunk = senderPlayer.getLocation().getChunk();
-            chunkX = senderChunk.getX();
-            chunkZ = senderChunk.getZ();
-        }
-
-        for (Map.Entry<String, String> entry : mappings.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-
-            if (key.indexOf('w') >= 0) {
-                world = null;
-                // Name should always be lower case by this point. Ignore case when selecting world.
-                for (World loaded : Bukkit.getWorlds()) {
-                    if (loaded.getName().equalsIgnoreCase(value)) {
-                        world = loaded;
-                        break;
+            for (CompletableOption<? extends SearchBucket> bucketOption : completableSearchBuckets) {
+                if (bucketOption.matches(sender, arg)) {
+                    PseudoOption<? extends SearchBucket> parsed = bucketOption.parse(sender, arg);
+                    if (parsed == null) {
+                        return Collections.emptyList();
                     }
+
+                    if (bucketOption.isUnique()) {
+                        Class<?> uniqueClazz = parsed.getClass();
+
+                        // Match existing buckets.
+                        List<PseudoOption<? extends SearchBucket>> matches = buckets.stream()
+                                .filter(bucket -> bucket.getClass().equals(uniqueClazz))
+                                .collect(Collectors.toList());
+
+                        // Remove all existing buckets.
+                        buckets.removeAll(matches);
+
+                        // Merge with existing buckets.
+                        for (PseudoOption<? extends SearchBucket> match : matches) {
+                            PseudoOption<? extends SearchBucket> newParsed = bucketOption.merge(sender, match, parsed);
+                            if (newParsed != null) {
+                                parsed = newParsed;
+                            }
+                        }
+                    }
+                    buckets.add(parsed);
                 }
-            } else if (key.indexOf('x') >= 0) {
-                try {
-                    chunkX = Integer.parseInt(value);
-                } catch (NumberFormatException e) {
-                    chunkX = null;
-                }
-            } else if (key.indexOf('z') >= 0) {
-                try {
-                    chunkZ = Integer.parseInt(value);
-                } catch (NumberFormatException e) {
-                    chunkZ = null;
-                }
-            } else if (key.indexOf('r') >= 0) {
-                // R is for radius. Needs to be checked later so that "world" doesn't result in a false positive.
-                try {
-                    chunkRadius = Integer.parseInt(value);
-                } catch (NumberFormatException e) {
-                    // Fall through to default radius.
-                }
-            } else if (key.indexOf('l') >= 0) {
-                // L is for loaded. Needs to be checked later so that "world" doesn't result in a false positive.
-                chunkLoad = Permissions.SEARCH_CHUNKS_UNLOADED.hasPermission(sender) && Boolean.parseBoolean(value);
             }
         }
 
-        if (world == null || chunkX == null || chunkZ == null || chunkRadius < 0) {
-            // Invalid data provided.
-            return null;
-        }
-
-        return new ChunkBucket(world, chunkX, chunkZ, chunkRadius, chunkLoad);
+        return buckets.stream().map(PseudoOption::getOption).collect(Collectors.toList());
     }
 
     @Override

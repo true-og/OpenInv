@@ -22,7 +22,7 @@
 # Re-calling the script and relying on it to handle caching is way easier than passing around info.
 declare -a spigot_versions
 
-# We don't care about concatenation - either it's not null and we return or it's null and we instantiate.
+# We don't care about concatenation - either it's not null and we handle entries or it's null and we instantiate.
 # shellcheck disable=SC2199
 if [[ ${spigot_versions[@]} ]]; then
   for spigot_version in "${spigot_versions[@]}"; do
@@ -30,6 +30,10 @@ if [[ ${spigot_versions[@]} ]]; then
   done
   return
 fi
+
+old_maven_opts=$MAVEN_OPTS
+# Add JVM parameters to allow help plugin access to packages it needs.
+export MAVEN_OPTS="$old_maven_opts --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED"
 
 # Pull Spigot dependency information from Maven.
 # Since we only care about Spigot versions, only check modules in the folder internal.
@@ -55,3 +59,6 @@ for module in "${modules[@]}"; do
     fi
   done
 done
+
+# Reset JVM parameters
+export MAVEN_OPTS=$old_maven_opts

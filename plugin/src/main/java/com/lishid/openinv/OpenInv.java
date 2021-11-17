@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2020 lishid. All rights reserved.
+ * Copyright (C) 2011-2021 lishid. All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,10 +33,12 @@ import com.lishid.openinv.util.ConfigUpdater;
 import com.lishid.openinv.util.InternalAccessor;
 import com.lishid.openinv.util.LanguageManager;
 import com.lishid.openinv.util.Permissions;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -86,7 +88,7 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
                 // Check if inventory is stored, and if it is, remove it and eject all viewers
                 if (OpenInv.this.inventories.containsKey(key)) {
                     Inventory inv = OpenInv.this.inventories.remove(key).getBukkitInventory();
-                    List<HumanEntity> viewers = inv.getViewers();
+                    List<HumanEntity> viewers = new ArrayList<>(inv.getViewers());
                     for (HumanEntity entity : viewers.toArray(new HumanEntity[0])) {
                         entity.closeInventory();
                     }
@@ -95,7 +97,7 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
                 // Check if ender chest is stored, and if it is, remove it and eject all viewers
                 if (OpenInv.this.enderChests.containsKey(key)) {
                     Inventory inv = OpenInv.this.enderChests.remove(key).getBukkitInventory();
-                    List<HumanEntity> viewers = inv.getViewers();
+                    List<HumanEntity> viewers = new ArrayList<>(inv.getViewers());
                     for (HumanEntity entity : viewers.toArray(new HumanEntity[0])) {
                         entity.closeInventory();
                     }
@@ -124,29 +126,23 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
         }
 
         if (this.inventories.containsKey(key)) {
-            Iterator<HumanEntity> iterator = this.inventories.get(key).getBukkitInventory().getViewers().iterator();
-            //noinspection WhileLoopReplaceableByForEach
-            while (iterator.hasNext()) {
-                HumanEntity human = iterator.next();
-                // If player has permission or is in the same world, allow continued access
-                // Just in case, also allow null worlds.
-                if (Permissions.CROSSWORLD.hasPermission(human) || human.getWorld().equals(player.getWorld())) {
-                    continue;
-                }
-                human.closeInventory();
-            }
+            kickCrossWorldViewers(player, this.inventories.get(key));
         }
 
         if (this.enderChests.containsKey(key)) {
-            Iterator<HumanEntity> iterator = this.enderChests.get(key).getBukkitInventory().getViewers().iterator();
-            //noinspection WhileLoopReplaceableByForEach
-            while (iterator.hasNext()) {
-                HumanEntity human = iterator.next();
-                if (Permissions.CROSSWORLD.hasPermission(human) || human.getWorld().equals(player.getWorld())) {
-                    continue;
-                }
-                human.closeInventory();
+            kickCrossWorldViewers(player, this.enderChests.get(key));
+        }
+    }
+
+    private void kickCrossWorldViewers(Player player, ISpecialInventory inventory) {
+        List<HumanEntity> viewers = new ArrayList<>(inventory.getBukkitInventory().getViewers());
+        for (HumanEntity human : viewers) {
+            // If player has permission or is in the same world, allow continued access
+            // Just in case, also allow null worlds.
+            if (Permissions.CROSSWORLD.hasPermission(human) || Objects.equals(human.getWorld(), player.getWorld())) {
+                continue;
             }
+            human.closeInventory();
         }
     }
 
@@ -328,7 +324,7 @@ public class OpenInv extends JavaPlugin implements IOpenInv {
         return this.languageManager.getValue(key, getLocale(sender), replacements);
     }
 
-    private @Nullable String getLocale(@NotNull CommandSender sender) {
+    private @NotNull String getLocale(@NotNull CommandSender sender) {
         if (sender instanceof Player) {
             return ((Player) sender).getLocale();
         } else {

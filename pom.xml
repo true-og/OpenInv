@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (C) 2011-2020 lishid. All rights reserved.
+  ~ Copyright (C) 2011-2021 lishid. All rights reserved.
   ~
   ~ This program is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
   <artifactId>openinvparent</artifactId>
   <name>OpenInv</name>
   <url>http://dev.bukkit.org/bukkit-plugins/openinv/</url>
-  <version>4.1.7-SNAPSHOT</version>
+  <version>4.1.9-SNAPSHOT</version>
 
   <packaging>pom</packaging>
 
@@ -37,7 +37,7 @@
       <modules>
         <module>api</module>
         <module>plugin</module>
-        <module>internal/v1_16_R3</module>
+        <module>internal/v1_17_R1</module>
         <module>assembly</module>
       </modules>
     </profile>
@@ -76,19 +76,19 @@
         <artifactId>annotations</artifactId>
         <groupId>org.jetbrains</groupId>
         <scope>provided</scope>
-        <version>20.1.0</version>
+        <version>21.0.1</version>
       </dependency>
       <dependency>
         <artifactId>paper-api</artifactId>
-        <groupId>com.destroystokyo.paper</groupId>
+        <groupId>io.papermc.paper</groupId>
         <scope>provided</scope>
-        <version>1.16.5-R0.1-SNAPSHOT</version>
+        <version>1.17.1-R0.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <artifactId>spigot-api</artifactId>
         <groupId>org.spigotmc</groupId>
         <scope>provided</scope>
-        <version>1.16.5-R0.1-SNAPSHOT</version>
+        <version>1.17.1-R0.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <artifactId>planarwrappers</artifactId>
@@ -100,13 +100,13 @@
         <artifactId>openinvapi</artifactId>
         <groupId>com.lishid</groupId>
         <scope>compile</scope>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.9-SNAPSHOT</version>
       </dependency>
       <dependency>
         <artifactId>openinvplugincore</artifactId>
         <groupId>com.lishid</groupId>
         <scope>compile</scope>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.9-SNAPSHOT</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -157,6 +157,12 @@
           <artifactId>maven-assembly-plugin</artifactId>
           <groupId>org.apache.maven.plugins</groupId>
           <version>3.3.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>net.md-5</groupId>
+          <artifactId>specialsource-maven-plugin</artifactId>
+          <version>1.2.2</version>
         </plugin>
       </plugins>
     </pluginManagement>

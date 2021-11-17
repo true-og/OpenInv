@@ -30,18 +30,23 @@ get_buildtools () {
   wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar -O $buildtools
 }
 
-versions=$(. ./scripts/get_spigot_versions.sh)
-echo Found Spigot dependencies: "$versions"
+readarray -t versions <<< "$(. ./scripts/get_spigot_versions.sh)"
+echo Found Spigot dependencies: "${versions[@]}"
+
+# Install dependencies aside from Spigot prior to running in offline mode.
+# Note that the default SuperPOM declares maven-dependency-plugin 2.8.0.
+# Unfortunately, we run into MDEP-204 and require a version >= 3.1.2.
+mvn org.apache.maven.plugins:maven-dependency-plugin:3.2.0:go-offline -DexcludeArtifactIds=spigot
 
 for version in "${versions[@]}"; do
   set -e
   exit_code=0
-  mvn dependency:get -Dartifact=org.spigotmc:spigot:"$version" -q -o || exit_code=$?
+  mvn dependency:get -Dartifact=org.spigotmc:spigot:"$version":remapped-mojang -q -o || exit_code=$?
   if [ $exit_code -ne 0 ]; then
     echo Installing missing Spigot version "$version"
     revision=${version%%-R*}
     get_buildtools
-    java -jar $buildtools -rev "$revision"
+    java -jar $buildtools -rev "$revision" --remapped
   else
     echo Spigot "$version" is already installed
   fi

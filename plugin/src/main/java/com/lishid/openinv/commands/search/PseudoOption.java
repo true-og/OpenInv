@@ -26,10 +26,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PseudoOption<T> {
 
-    private final PseudoJson pseudoJson;
-    private final T option;
+    private final @NotNull PseudoJson pseudoJson;
+    private final @NotNull T option;
 
-    PseudoOption(PseudoJson pseudoJson, T option) {
+    PseudoOption(@NotNull PseudoJson pseudoJson, @NotNull T option) {
         this.pseudoJson = pseudoJson;
         this.option = option;
     }

@@ -68,8 +68,6 @@ public class SearchCommand implements TabExecutor {
             @NotNull Command command,
             @NotNull String label,
             @NotNull String[] args) {
-        // TODO
-        //  - less gross way to deal with parsing options
 
         if (args.length < 2) {
             return false;

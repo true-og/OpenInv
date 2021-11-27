@@ -14,32 +14,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.match;
 
-import com.lishid.openinv.util.MessagePart;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public class MatchResult {
+public interface MatchableMeta {
 
-    public static final MatchResult NO_MATCH = new MatchResult();
-
-    private final MessagePart[] result;
-
-    private MatchResult() {
-        result = null;
-    }
-
-    public MatchResult(MessagePart @NotNull [] result) {
-        this.result = result;
-    }
-
-    public boolean isMatch() {
-        return result != null;
-    }
-
-    public MessagePart @Nullable [] getMatch() {
-        return result;
-    }
+    boolean matches(@NotNull ItemMeta itemMeta);
 
 }

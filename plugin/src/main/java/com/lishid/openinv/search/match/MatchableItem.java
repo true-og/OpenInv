@@ -14,12 +14,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.match;
 
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
-public interface MatchOption {
+public interface MatchableItem {
 
-    boolean matches(ItemStack itemStack);
+    boolean matches(@NotNull ItemStack itemStack);
 
 }

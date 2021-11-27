@@ -14,8 +14,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.bucket;
 
+import com.lishid.openinv.search.match.ItemMatcher;
+import com.lishid.openinv.search.match.MatchResult;
+import com.lishid.openinv.search.match.Matchable;
 import com.lishid.openinv.util.MessagePart;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +60,7 @@ class MatchableChunk implements Matchable {
     }
 
     @Override
-    public @NotNull MatchResult match(ItemMatcher matcher) {
+    public @NotNull MatchResult match(@NotNull ItemMatcher matcher) {
         List<BlockState> blocks = new ArrayList<>();
 
         for (BlockState tileEntity : getChunk().getTileEntities()) {

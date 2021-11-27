@@ -14,24 +14,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.match;
 
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MatchOptions {
+public class ItemMatchables {
 
-    public static MatchOption isType(@NotNull Material material) {
+    public static MatchableItem isType(@NotNull Material material) {
         return itemStack -> itemStack.getType() == material;
     }
 
-    public static MatchOption hasAmount(int minAmount) {
+    public static MatchableItem hasAmount(int minAmount) {
         return itemStack -> itemStack.getAmount() >= minAmount;
     }
 
-    public static MatchMetaOption hasEnchant(@Nullable Enchantment enchantment, @Nullable Integer minLevel) {
+    public static MatchableMeta hasEnchant(@Nullable Enchantment enchantment, @Nullable Integer minLevel) {
         return itemMeta -> {
             if (minLevel == null) {
                 if (enchantment == null) {
@@ -59,6 +59,6 @@ public class MatchOptions {
         };
     }
 
-    private MatchOptions() {}
+    private ItemMatchables() {}
 
 }

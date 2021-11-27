@@ -22,12 +22,12 @@ import com.lishid.openinv.commands.search.ChunkSearchOption;
 import com.lishid.openinv.commands.search.CompletableOption;
 import com.lishid.openinv.commands.search.PlayerSearchOption;
 import com.lishid.openinv.commands.search.PseudoOption;
-import com.lishid.openinv.search.ItemMatcher;
-import com.lishid.openinv.search.MatchMetaOption;
-import com.lishid.openinv.search.MatchOption;
-import com.lishid.openinv.search.MatchOptions;
+import com.lishid.openinv.search.match.ItemMatcher;
+import com.lishid.openinv.search.match.MatchableMeta;
+import com.lishid.openinv.search.match.MatchableItem;
+import com.lishid.openinv.search.match.ItemMatchables;
 import com.lishid.openinv.search.Search;
-import com.lishid.openinv.search.SearchBucket;
+import com.lishid.openinv.search.bucket.SearchBucket;
 import com.lishid.openinv.util.PseudoJson;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,8 +52,8 @@ public class SearchCommand implements TabExecutor {
     private final Collection<String> activeSearches = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private final Collection<CompletableOption<? extends SearchBucket>> completableSearchBuckets = new HashSet<>();
-    private final Collection<CompletableOption<MatchOption>> completableMatchOptions = new HashSet<>();
-    private final Collection<CompletableOption<MatchMetaOption>> completableMatchMetaOptions = new HashSet<>();
+    private final Collection<CompletableOption<MatchableItem>> completableMatchOptions = new HashSet<>();
+    private final Collection<CompletableOption<MatchableMeta>> completableMatchMetaOptions = new HashSet<>();
 
     public SearchCommand(OpenInv plugin) {
         this.plugin = plugin;
@@ -107,7 +107,7 @@ public class SearchCommand implements TabExecutor {
     }
 
     private @Nullable ItemMatcher getMatcher(Collection<PseudoJson> args) {
-        List<MatchMetaOption> matchMetaOptions = new ArrayList<>();
+        List<MatchableMeta> matchMetaOptions = new ArrayList<>();
         Material type = null;
         Integer minAmount = null;
 
@@ -159,25 +159,25 @@ public class SearchCommand implements TabExecutor {
                     }
                 }
 
-                matchMetaOptions.add(MatchOptions.hasEnchant(enchantment, enchantLevel));
+                matchMetaOptions.add(ItemMatchables.hasEnchant(enchantment, enchantLevel));
             }
         }
 
-        List<MatchOption> matchOptions = new ArrayList<>();
+        List<MatchableItem> matchableItems = new ArrayList<>();
 
         if (type != null) {
-            matchOptions.add(MatchOptions.isType(type));
+            matchableItems.add(ItemMatchables.isType(type));
         }
 
         if (minAmount != null) {
-            matchOptions.add(MatchOptions.hasAmount(minAmount));
+            matchableItems.add(ItemMatchables.hasAmount(minAmount));
         }
 
-        if (matchOptions.isEmpty()) {
+        if (matchableItems.isEmpty()) {
             return null;
         }
 
-        return new ItemMatcher(matchOptions, matchMetaOptions);
+        return new ItemMatcher(matchableItems, matchMetaOptions);
     }
 
     private Collection<SearchBucket> getSearchBuckets(CommandSender sender, Collection<PseudoJson> args) {

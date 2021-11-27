@@ -30,8 +30,8 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>Ex: A ChunkBucket can be expressed <code>chunks{world:world_name,x:0,z:0,radius:10,load:true}</code>. The
  * starting "chunks" identifies it as a ChunkBucket and the content in braces contains the construction detail.
- * However, a simpler detail, such as a MatchOption, may be specified <code>type:IRON_SWORD</code> where "type"
- * is both the identifier of the MatchOption and the key of the sole value.
+ * However, a simpler detail, such as a MatchableItem, may be specified <code>type:IRON_SWORD</code> where "type"
+ * is both the identifier of the MatchableItem and the key of the sole value.
  *
  * <p>A best-effort will be made to match other start and finish demarcation techniques.
  */

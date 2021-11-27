@@ -14,12 +14,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.match;
 
-import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.NotNull;
 
-public interface MatchMetaOption {
+public interface Matchable {
 
-    boolean matches(ItemMeta itemMeta);
+    Matchable EMPTY = matcher -> MatchResult.NO_MATCH;
+
+    @NotNull MatchResult match(@NotNull ItemMatcher matcher);
 
 }

@@ -14,16 +14,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.match;
 
+import com.lishid.openinv.util.MessagePart;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public interface SearchBucket {
+public class MatchResult {
 
-    boolean hasNext();
+    public static final MatchResult NO_MATCH = new MatchResult();
 
-    @NotNull Matchable next() throws IndexOutOfBoundsException;
+    private final MessagePart[] result;
 
-    int size();
+    private MatchResult() {
+        result = null;
+    }
+
+    public MatchResult(MessagePart @NotNull [] result) {
+        this.result = result;
+    }
+
+    public boolean isMatch() {
+        return result != null;
+    }
+
+    public MessagePart @Nullable [] getMatch() {
+        return result;
+    }
 
 }

@@ -14,9 +14,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.bucket;
 
 import com.github.jikoo.planarwrappers.tuple.Pair;
+import com.lishid.openinv.search.match.MatchResult;
+import com.lishid.openinv.search.match.Matchable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

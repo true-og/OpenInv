@@ -17,7 +17,7 @@
 package com.lishid.openinv.commands.search;
 
 import com.lishid.openinv.OpenInv;
-import com.lishid.openinv.search.PlayerBucket;
+import com.lishid.openinv.search.bucket.PlayerBucket;
 import com.lishid.openinv.util.Permissions;
 import com.lishid.openinv.util.PseudoJson;
 import java.util.Collection;

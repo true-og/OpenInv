@@ -14,9 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.bucket;
 
 import com.lishid.openinv.OpenInv;
+import com.lishid.openinv.search.match.Matchable;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;

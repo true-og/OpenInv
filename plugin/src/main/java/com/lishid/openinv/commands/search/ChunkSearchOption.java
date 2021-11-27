@@ -16,7 +16,7 @@
 
 package com.lishid.openinv.commands.search;
 
-import com.lishid.openinv.search.ChunkBucket;
+import com.lishid.openinv.search.bucket.ChunkBucket;
 import com.lishid.openinv.util.Permissions;
 import com.lishid.openinv.util.PseudoJson;
 import java.util.Collection;

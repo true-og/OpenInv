@@ -17,6 +17,10 @@
 package com.lishid.openinv.search;
 
 import com.lishid.openinv.OpenInv;
+import com.lishid.openinv.search.bucket.SearchBucket;
+import com.lishid.openinv.search.match.ItemMatcher;
+import com.lishid.openinv.search.match.MatchResult;
+import com.lishid.openinv.search.match.Matchable;
 import com.lishid.openinv.util.MessagePart;
 import java.text.DecimalFormat;
 import java.util.ArrayList;

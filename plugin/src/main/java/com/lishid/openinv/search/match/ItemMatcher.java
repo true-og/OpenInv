@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lishid.openinv.search;
+package com.lishid.openinv.search.match;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -28,12 +28,12 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ItemMatcher {
 
-    private final Collection<MatchOption> baseOptions;
-    private final Collection<MatchMetaOption> metaOptions;
+    private final Collection<MatchableItem> baseOptions;
+    private final Collection<MatchableMeta> metaOptions;
 
     public ItemMatcher(
-            Collection<MatchOption> baseOptions,
-            Collection<MatchMetaOption> metaOptions) {
+            Collection<MatchableItem> baseOptions,
+            Collection<MatchableMeta> metaOptions) {
         this.baseOptions = new HashSet<>(baseOptions);
         this.metaOptions = new HashSet<>(metaOptions);
     }
@@ -45,7 +45,7 @@ public class ItemMatcher {
         }
 
         // Match options against base item.
-        for (MatchOption baseOption : baseOptions) {
+        for (MatchableItem baseOption : baseOptions) {
             if (!baseOption.matches(other)) {
                 return false;
             }
@@ -63,7 +63,7 @@ public class ItemMatcher {
         }
 
         // Match meta-based options.
-        for (MatchMetaOption metaOption : metaOptions) {
+        for (MatchableMeta metaOption : metaOptions) {
             if (!metaOption.matches(meta)) {
                 return false;
             }

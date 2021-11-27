@@ -18,6 +18,7 @@ package com.lishid.openinv.commands.search;
 
 import com.lishid.openinv.util.PseudoJson;
 import java.util.Collection;
+import java.util.Locale;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,13 +31,22 @@ import org.jetbrains.annotations.Nullable;
 public interface CompletableOption<T> {
 
     /**
+     * Get unique identifier representing the option.
+     *
+     * @return the unique identifier
+     */
+    @NotNull String getName();
+
+    /**
      * Check if the <code>CompletableOption</code> matches the given <code>PseudoJson</code>.
      *
      * @param sender the individual using the option
      * @param pseudoJson the pseudo-JSON element
      * @return true if the CompletableOption matches
      */
-    boolean matches(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson);
+    default boolean matches(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
+        return pseudoJson.getIdentifier().toLowerCase(Locale.ROOT).startsWith(getName());
+    }
 
     /**
      * Parse the option represented from the given <code>PseudoJson</code>.
@@ -77,12 +87,12 @@ public interface CompletableOption<T> {
             @NotNull CommandSender sender,
             @NotNull PseudoOption<?> first,
             @NotNull PseudoOption<?> second) {
-        PseudoJson merge = new PseudoJson(first.getPseudoJson().getIdentifier());
+        PseudoJson merge = new PseudoJson(first.pseudoJson().getIdentifier());
 
         // Use mappings of first for our base.
-        first.getPseudoJson().getMappings().forEach(merge::put);
+        first.pseudoJson().getMappings().forEach(merge::put);
         // Overwrite with second.
-        second.getPseudoJson().getMappings().forEach(merge::put);
+        second.pseudoJson().getMappings().forEach(merge::put);
 
         // Parse merged options.
         PseudoOption<T> parsed = parse(sender, merge);
@@ -92,7 +102,7 @@ public interface CompletableOption<T> {
         }
 
         // On parsing failure, try second instead.
-        merge = new PseudoJson(second.getPseudoJson().getIdentifier(), merge.getMappings());
+        merge = new PseudoJson(second.pseudoJson().getIdentifier(), merge.getMappings());
 
         return parse(sender, merge);
     }

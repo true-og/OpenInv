@@ -3,6 +3,7 @@ messages:
     consoleUnsupported: 'You cannot use this command from console.'
     lootNotGenerated: '&cLoot not generated! Please disable &b/silentcontainer&c.'
     search:
+      invalidSchema: '&cUnable to parse "%value%" to determine target. Try using tab completion!'
       invalidInventory: '&cUnable to determine target inventories. Try using tab completion!'
       invalidMatcher: '&cUnable to determine target item parameters. Try using tab completion!'
       activeSearch: '&cPlease wait for your search to complete before starting another.'

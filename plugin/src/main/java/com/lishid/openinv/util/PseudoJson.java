@@ -61,6 +61,7 @@ public class PseudoJson {
 
     public PseudoJson(@NotNull String identifier, @NotNull Map<String, String> mappings) {
         this.identifier = identifier;
+        mappings.forEach(PseudoJson::validate);
         this.mappings = mappings;
     }
 
@@ -69,9 +70,7 @@ public class PseudoJson {
     }
 
     public @NotNull Optional<String> put(@NotNull String key, @NotNull String value) {
-        if (RESERVED_CHARACTERS.stream().anyMatch(character -> key.indexOf(character) >= 0 || value.indexOf(character) >= 0)) {
-            throw new IllegalArgumentException(String.format("Primitive pseudo-JSON reserves characters %s", RESERVED_CHARACTERS));
-        }
+        validate(key, value);
 
         return Optional.ofNullable(this.mappings.put(key, value));
     }
@@ -109,6 +108,12 @@ public class PseudoJson {
     @Override
     public String toString() {
         return asString();
+    }
+
+    private static void validate(String key, String value) {
+        if (RESERVED_CHARACTERS.stream().anyMatch(character -> key.indexOf(character) >= 0 || value.indexOf(character) >= 0)) {
+            throw new IllegalArgumentException(String.format("Primitive pseudo-JSON reserves characters %s", RESERVED_CHARACTERS));
+        }
     }
 
     public static PseudoJson fromString(String pseudoJson) {

@@ -66,9 +66,8 @@
     <plugins>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <!-- Cannot use minimizeJar until maven-shade-plugin 3.3.0 releases; ASM used does not support Java 17. -->
         <configuration>
-          <minimizeJar>false</minimizeJar>
+          <minimizeJar>true</minimizeJar>
         </configuration>
       </plugin>
       <plugin>

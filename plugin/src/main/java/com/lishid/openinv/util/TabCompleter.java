@@ -22,9 +22,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
 import org.bukkit.Bukkit;
+import org.bukkit.Keyed;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Utility class for common tab completions.
@@ -37,7 +40,7 @@ public class TabCompleter {
      * @param argument the argument to complete
      * @return integer options
      */
-    public static List<String> completeInteger(String argument) {
+    public static List<String> completeInteger(@NotNull String argument) {
         // Ensure existing argument is actually a number
         if (!argument.isEmpty()) {
             try {
@@ -62,14 +65,46 @@ public class TabCompleter {
      * @param enumClazz the Enum to complete for
      * @return the matching Enum values
      */
-    public static List<String> completeEnum(String argument, Class<? extends Enum<?>> enumClazz) {
+    public static List<String> completeEnum(@NotNull String argument, @NotNull Class<? extends Enum<?>> enumClazz) {
+        return completeObject(argument, Enum::name, enumClazz.getEnumConstants());
+    }
+
+    /**
+     * Offer tab completions for {@link Material Materials}.
+     *
+     * @param argument the argument to complete
+     * @return the matching {@code Material} keys
+     */
+    public static List<String> completeMaterial(@NotNull String argument) {
         argument = argument.toLowerCase(Locale.ENGLISH);
         List<String> completions = new ArrayList<>();
 
-        for (Enum<?> enumConstant : enumClazz.getEnumConstants()) {
-            String name = enumConstant.name().toLowerCase();
-            if (name.startsWith(argument)) {
-                completions.add(name);
+        for (Material material : Material.values()) {
+            if (material.name().toLowerCase(Locale.ENGLISH).startsWith(argument)
+                    || material.getKey().toString().startsWith(argument)
+                    || material.getKey().getKey().startsWith(argument)) {
+                completions.add(material.getKey().toString());
+            }
+        }
+
+        return completions;
+    }
+
+    /**
+     * Offer tab completions for {@link Keyed} values.
+     *
+     * @param argument the argument to complete
+     * @param options the {@code Keyed} values
+     * @return the matching keys
+     */
+    public static List<String> completeKeyed(@NotNull String argument, @NotNull Keyed @NotNull [] options) {
+        argument = argument.toLowerCase(Locale.ENGLISH);
+        List<String> completions = new ArrayList<>();
+
+        for (Keyed keyed : options) {
+            if (keyed.getKey().toString().startsWith(argument)
+                    || keyed.getKey().getKey().startsWith(argument)) {
+                completions.add(keyed.getKey().toString());
             }
         }
 
@@ -83,7 +118,7 @@ public class TabCompleter {
      * @param options the Strings which may be completed
      * @return the matching Strings
      */
-    public static List<String> completeString(String argument, String[] options) {
+    public static List<String> completeString(@NotNull String argument, @NotNull String @NotNull [] options) {
         argument = argument.toLowerCase(Locale.ENGLISH);
         List<String> completions = new ArrayList<>();
 
@@ -103,7 +138,7 @@ public class TabCompleter {
      * @param argument the argument to complete
      * @return the matching Players' names
      */
-    public static List<String> completeOnlinePlayer(CommandSender sender, String argument) {
+    public static List<String> completeOnlinePlayer(@NotNull CommandSender sender, String argument) {
         List<String> completions = new ArrayList<>();
         Player senderPlayer = sender instanceof Player ? (Player) sender : null;
 
@@ -128,12 +163,12 @@ public class TabCompleter {
      * @param options the Objects which may be completed
      * @return the matching Strings
      */
-    public static <T> List<String> completeObject(String argument, Function<T, String> converter, T[] options) {
+    public static <T> List<String> completeObject(@NotNull String argument, @NotNull Function<T, String> converter, @NotNull T @NotNull [] options) {
         argument = argument.toLowerCase(Locale.ENGLISH);
         List<String> completions = new ArrayList<>();
 
         for (T option : options) {
-            String optionString = converter.apply(option).toLowerCase();
+            String optionString = converter.apply(option).toLowerCase(Locale.ENGLISH);
             if (optionString.startsWith(argument)) {
                 completions.add(optionString);
             }

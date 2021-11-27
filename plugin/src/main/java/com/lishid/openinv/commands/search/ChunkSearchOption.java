@@ -17,10 +17,12 @@
 package com.lishid.openinv.commands.search;
 
 import com.lishid.openinv.search.bucket.ChunkBucket;
+import com.lishid.openinv.search.bucket.SearchBucket;
 import com.lishid.openinv.util.Permissions;
 import com.lishid.openinv.util.PseudoJson;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -29,15 +31,21 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ChunkSearchOption implements CompletableOption<ChunkBucket> {
+public class ChunkSearchOption implements CompletableOption<SearchBucket> {
 
     @Override
-    public boolean matches(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
-        return pseudoJson.getIdentifier().startsWith("chunk") && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender);
+    public @NotNull String getName() {
+        return "chunk";
     }
 
     @Override
-    public @Nullable PseudoOption<ChunkBucket> parse(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
+    public boolean matches(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
+        return CompletableOption.super.matches(sender, pseudoJson)
+                && Permissions.SEARCH_CHUNKS_LOADED.hasPermission(sender);
+    }
+
+    @Override
+    public @Nullable PseudoOption<SearchBucket> parse(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
         World world = null;
         Integer chunkX = null;
         Integer chunkZ = null;
@@ -45,13 +53,12 @@ public class ChunkSearchOption implements CompletableOption<ChunkBucket> {
         boolean chunkLoad = false;
         Map<String, String> mappings = pseudoJson.getMappings();
 
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player senderPlayer)) {
             if (mappings.size() < 3) {
                 // Console must specify world, x center, z center.
                 return null;
             }
         } else {
-            Player senderPlayer = (Player) sender;
             world = senderPlayer.getWorld();
             Chunk senderChunk = senderPlayer.getLocation().getChunk();
             chunkX = senderChunk.getX();
@@ -107,7 +114,7 @@ public class ChunkSearchOption implements CompletableOption<ChunkBucket> {
     @Override
     public @NotNull Collection<String> suggestOptions(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
         // TODO
-        return null;
+        return Set.of();
     }
 
     @Override

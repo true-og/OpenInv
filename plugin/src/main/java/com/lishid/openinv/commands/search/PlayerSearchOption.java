@@ -18,16 +18,18 @@ package com.lishid.openinv.commands.search;
 
 import com.lishid.openinv.OpenInv;
 import com.lishid.openinv.search.bucket.PlayerBucket;
+import com.lishid.openinv.search.bucket.SearchBucket;
 import com.lishid.openinv.util.Permissions;
 import com.lishid.openinv.util.PseudoJson;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class PlayerSearchOption implements CompletableOption<PlayerBucket> {
+public class PlayerSearchOption implements CompletableOption<SearchBucket> {
 
     private final OpenInv plugin;
 
@@ -36,12 +38,18 @@ public class PlayerSearchOption implements CompletableOption<PlayerBucket> {
     }
 
     @Override
-    public boolean matches(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
-        return pseudoJson.getIdentifier().startsWith("player") && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender);
+    public @NotNull String getName() {
+        return "player";
     }
 
     @Override
-    public @Nullable PseudoOption<PlayerBucket> parse(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
+    public boolean matches(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
+        return CompletableOption.super.matches(sender, pseudoJson)
+                && Permissions.SEARCH_PLAYERS_ONLINE.hasPermission(sender);
+    }
+
+    @Override
+    public @Nullable PseudoOption<SearchBucket> parse(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
         Optional<Boolean> optional = pseudoJson.getMappings().entrySet().stream()
                 .filter(entry -> entry.getKey().contains("offline"))
                 .findFirst()
@@ -56,7 +64,7 @@ public class PlayerSearchOption implements CompletableOption<PlayerBucket> {
     @Override
     public @NotNull Collection<String> suggestOptions(@NotNull CommandSender sender, @NotNull PseudoJson pseudoJson) {
         // TODO
-        return null;
+        return Set.of();
     }
 
     @Override

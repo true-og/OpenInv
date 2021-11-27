@@ -24,32 +24,4 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param <T> the type of data
  */
-public class PseudoOption<T> {
-
-    private final @NotNull PseudoJson pseudoJson;
-    private final @NotNull T option;
-
-    PseudoOption(@NotNull PseudoJson pseudoJson, @NotNull T option) {
-        this.pseudoJson = pseudoJson;
-        this.option = option;
-    }
-
-    /**
-     * Get the <code>PseudoJson</code> representation of the data.
-     *
-     * @return the data
-     */
-    public @NotNull PseudoJson getPseudoJson() {
-        return pseudoJson;
-    }
-
-    /**
-     * Get the option parsed from the <code>PseudoJson</code>.
-     *
-     * @return the option
-     */
-    public @NotNull T getOption() {
-        return option;
-    }
-
-}
+public record PseudoOption<T>(@NotNull PseudoJson pseudoJson, @NotNull T option) {}

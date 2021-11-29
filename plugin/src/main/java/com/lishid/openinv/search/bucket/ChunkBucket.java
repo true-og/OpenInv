@@ -16,7 +16,6 @@
 
 package com.lishid.openinv.search.bucket;
 
-import com.github.jikoo.planarwrappers.tuple.Pair;
 import com.lishid.openinv.search.match.MatchResult;
 import com.lishid.openinv.search.match.Matchable;
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ public class ChunkBucket implements SearchBucket {
 
     private final World world;
     private final boolean load;
-    private final List<Pair<Integer, Integer>> chunks;
+    private final List<ChunkCoord> chunks;
     protected int index = -1;
     private Boolean paper = null;
 
@@ -41,27 +40,27 @@ public class ChunkBucket implements SearchBucket {
         this.load = load;
         this.chunks = new ArrayList<>();
         // Order chunks based (loosely) on proximity.
-        spiralRectangle(radius, (deltaX, deltaZ) -> chunks.add(new Pair<>(chunkX + deltaX, chunkZ + deltaZ)));
+        spiralRectangle(radius, (deltaX, deltaZ) -> chunks.add(new ChunkCoord(chunkX + deltaX, chunkZ + deltaZ)));
     }
 
     @Override
     public @NotNull Matchable next() throws IndexOutOfBoundsException {
-        Pair<Integer, Integer> chunkCoords = chunks.get(++index);
+        ChunkCoord chunkCoord = chunks.get(++index);
 
-        if (!world.isChunkGenerated(chunkCoords.getLeft(), chunkCoords.getRight())) {
+        if (!world.isChunkGenerated(chunkCoord.x(), chunkCoord.z())) {
             return Matchable.EMPTY;
         }
 
-        if (!load && !world.isChunkLoaded(chunkCoords.getLeft(), chunkCoords.getRight())) {
+        if (!load && !world.isChunkLoaded(chunkCoord.x(), chunkCoord.z())) {
             return Matchable.EMPTY;
         }
 
         // If async chunk loading is not available, load chunk when checking.
         if (!isPaper()) {
-            return new MatchableChunk(world, chunkCoords.getLeft(), chunkCoords.getRight());
+            return new MatchableChunk(world, chunkCoord.x(), chunkCoord.z());
         }
 
-        CompletableFuture<Chunk> chunkAt = world.getChunkAtAsync(chunkCoords.getLeft(), chunkCoords.getRight());
+        CompletableFuture<Chunk> chunkAt = world.getChunkAtAsync(chunkCoord.x(), chunkCoord.z());
 
         Chunk chunk;
         try {

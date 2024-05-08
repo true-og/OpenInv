@@ -26,13 +26,13 @@
     <version>4.4.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>openinvadapter1_19_R3</artifactId>
-  <name>OpenInvAdapter1_19_R3</name>
+  <artifactId>openinvadapter1_20_R4</artifactId>
+  <name>OpenInvAdapter1_20_R4</name>
 
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <spigot.version>1.19.4-R0.1-SNAPSHOT</spigot.version>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <spigot.version>1.20.6-R0.1-SNAPSHOT</spigot.version>
   </properties>
 
   <dependencies>

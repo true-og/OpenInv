@@ -86,7 +86,7 @@ public class OpenPlayer extends CraftPlayer {
         try {
             PlayerDataStorage worldNBTStorage = player.server.getPlayerList().playerIo;
 
-            CompoundTag oldData = isOnline() ? null : worldNBTStorage.load(player);
+            CompoundTag oldData = isOnline() ? null : worldNBTStorage.getPlayerData(player.getStringUUID());
             CompoundTag playerData = getWritableTag(oldData);
             playerData = player.saveWithoutId(playerData);
             setExtraData(playerData);

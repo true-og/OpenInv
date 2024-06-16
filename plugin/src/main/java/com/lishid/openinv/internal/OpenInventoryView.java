@@ -16,8 +16,6 @@
 
 package com.lishid.openinv.internal;
 
-import com.lishid.openinv.OpenInv;
-import com.lishid.openinv.util.lang.Replacement;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
@@ -25,25 +23,20 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
-
 public class OpenInventoryView extends InventoryView {
 
     private final @NotNull Player player;
     private final @NotNull ISpecialInventory inventory;
-    private final @NotNull String titleKey;
-    private final @NotNull String titleDefaultSuffix;
+    private final @NotNull String originalTitle;
     private String title;
 
     public OpenInventoryView(
             @NotNull Player player,
             @NotNull ISpecialInventory inventory,
-            @NotNull String titleKey,
-            @NotNull String titleDefaultSuffix) {
+            @NotNull String originalTitle) {
         this.player = player;
         this.inventory = inventory;
-        this.titleKey = titleKey;
-        this.titleDefaultSuffix = titleDefaultSuffix;
+        this.originalTitle = originalTitle;
     }
 
     @Override
@@ -68,24 +61,12 @@ public class OpenInventoryView extends InventoryView {
 
     @Override
     public @NotNull String getTitle() {
-        if (title == null) {
-            title = getOriginalTitle();
-        }
-
-        return title;
+        return title == null ? originalTitle : title;
     }
 
-    @NotNull
     @Override
-    public String getOriginalTitle() {
-        HumanEntity owner = inventory.getPlayer();
-
-        String localTitle = OpenInv.getPlugin(OpenInv.class)
-            .getLocalizedMessage(
-                player,
-                titleKey,
-                new Replacement("%player%", owner.getName()));
-        return Objects.requireNonNullElseGet(localTitle, () -> owner.getName() + titleDefaultSuffix);
+    public @NotNull String getOriginalTitle() {
+        return originalTitle;
     }
 
     @Override

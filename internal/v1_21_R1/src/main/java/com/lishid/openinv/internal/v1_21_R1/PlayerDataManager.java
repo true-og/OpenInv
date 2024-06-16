@@ -16,9 +16,11 @@
 
 package com.lishid.openinv.internal.v1_21_R1;
 
+import com.github.jikoo.planarwrappers.function.TriFunction;
 import com.lishid.openinv.OpenInv;
 import com.lishid.openinv.internal.IPlayerDataManager;
 import com.lishid.openinv.internal.ISpecialInventory;
+import com.lishid.openinv.internal.InventoryViewTitle;
 import com.lishid.openinv.internal.OpenInventoryView;
 import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.Dynamic;
@@ -58,6 +60,7 @@ import java.util.logging.Logger;
 public class PlayerDataManager implements IPlayerDataManager {
 
     private static boolean paper;
+    private static TriFunction<Player, ISpecialInventory, String, InventoryView> viewProvider;
 
     static {
         try {
@@ -65,6 +68,12 @@ public class PlayerDataManager implements IPlayerDataManager {
             paper = true;
         } catch (ClassNotFoundException ignored) {
             paper = false;
+        }
+        try {
+            Class.forName(Bukkit.getServer().getClass().getPackageName() + ".inventory.CraftAbstractInventoryView");
+            viewProvider = OpenCraftView::new;
+        } catch (ClassNotFoundException ignored) {
+            viewProvider = OpenInventoryView::new;
         }
     }
 
@@ -250,28 +259,33 @@ public class PlayerDataManager implements IPlayerDataManager {
             return null;
         }
 
-        InventoryView view = getView(player, inventory);
+        InventoryViewTitle viewTitle = InventoryViewTitle.of(inventory);
 
-        if (view == null) {
+        if (viewTitle == null) {
             return player.openInventory(inventory.getBukkitInventory());
         }
 
+        String originalTitle = viewTitle.getTitle(player, inventory);
+        InventoryView view = viewProvider.apply(player, inventory, originalTitle);
+        Component title = Component.literal(originalTitle);
         AbstractContainerMenu container = new CraftContainer(view, nmsPlayer, nmsPlayer.nextContainerCounter()) {
             @Override
             public MenuType<?> getType() {
                 return getContainers(inventory.getBukkitInventory().getSize());
             }
         };
+        container.setTitle(title);
 
-        container.setTitle(Component.literal(view.getTitle()));
         container = CraftEventFactory.callInventoryOpenEvent(nmsPlayer, container);
 
         if (container == null) {
             return null;
         }
 
-        nmsPlayer.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(),
-                Component.literal(container.getBukkitView().getTitle())));
+        // Note: Reusing component prevents plugins from changing title during InventoryOpenEvent, but there's not much
+        // we can do about that - we can't call InventoryView#getTitle on older versions without causing an
+        // IncompatibleClassChangeError due to the fact that InventoryView is now an interface.
+        nmsPlayer.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), title));
         nmsPlayer.containerMenu = container;
         nmsPlayer.initMenu(container);
 
@@ -279,23 +293,13 @@ public class PlayerDataManager implements IPlayerDataManager {
 
     }
 
-    private @Nullable InventoryView getView(Player player, ISpecialInventory inventory) {
-        if (inventory instanceof SpecialEnderChest) {
-            return new OpenInventoryView(player, inventory, "container.enderchest", "'s Ender Chest");
-        } else if (inventory instanceof SpecialPlayerInventory) {
-            return new OpenInventoryView(player, inventory, "container.player", "'s Inventory");
-        } else {
-            return null;
-        }
-    }
-
     static @NotNull MenuType<?> getContainers(int inventorySize) {
 
         return switch (inventorySize) {
             case 9 -> MenuType.GENERIC_9x1;
             case 18 -> MenuType.GENERIC_9x2;
-            case 36 -> MenuType.GENERIC_9x4; // PLAYER
-            case 41, 45 -> MenuType.GENERIC_9x5;
+            case 36 -> MenuType.GENERIC_9x4;
+            case 41, 45 -> MenuType.GENERIC_9x5; // PLAYER
             case 54 -> MenuType.GENERIC_9x6;
             default -> MenuType.GENERIC_9x3; // Default 27-slot inventory
         };

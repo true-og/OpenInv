@@ -89,13 +89,13 @@
         <artifactId>openinvapi</artifactId>
         <groupId>com.lishid</groupId>
         <scope>compile</scope>
-        <version>4.4.8-SNAPSHOT</version>
+        <version>4.4.9</version>
       </dependency>
       <dependency>
         <artifactId>openinvplugincore</artifactId>
         <groupId>com.lishid</groupId>
         <scope>compile</scope>
-        <version>4.4.8-SNAPSHOT</version>
+        <version>4.4.9</version>
         <exclusions>
           <exclusion>
             <groupId>com.lishid</groupId>

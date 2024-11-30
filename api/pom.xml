@@ -19,29 +19,39 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>openinvparent</artifactId>
     <groupId>com.lishid</groupId>
+    <artifactId>openinvparent</artifactId>
     <version>4.4.8-SNAPSHOT</version>
   </parent>
 
   <artifactId>openinvapi</artifactId>
+  <packaging>jar</packaging>
   <name>OpenInvAPI</name>
+  <description>A powerful API for OpenInv project.</description>
 
   <dependencies>
     <dependency>
-      <artifactId>annotations</artifactId>
       <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-      <artifactId>spigot-api</artifactId>
       <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <release>${maven.compiler.release}</release>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -81,4 +81,14 @@ public class OpenInventoryView extends InventoryView {
         return title;
     }
 
+    @Override
+    public @NotNull String getOriginalTitle() {
+        return getTitle();
+    }
+
+    @Override
+    public void setTitle(@NotNull String title) {
+        this.title = title;
+    }
+
 }

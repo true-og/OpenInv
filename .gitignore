@@ -4,7 +4,9 @@
 **/.idea/
 **.iml
 **/target/
+**/build/
 **/bin/
 **/out/
+**/.gradle/
 **/dependency-reduced-pom.xml
 **/pom.xml.versionsBackup

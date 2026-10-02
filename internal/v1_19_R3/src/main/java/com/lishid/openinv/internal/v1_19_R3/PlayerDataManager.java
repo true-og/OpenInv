@@ -115,7 +115,8 @@ public class PlayerDataManager implements IPlayerDataManager {
 
         // Load data. This also reads basic data into the player.
         // See CraftPlayer#loadData
-        CompoundTag loadedData = server.getPlayerList().playerIo.load(entity);
+        // The server's own storage, not PlayerList.playerIo: a world manager may hook that field and answer with a per-world profile, and an offline edit always means the main profile.
+        CompoundTag loadedData = server.playerDataStorage.load(entity);
 
         if (loadedData == null) {
             // Exceptions with loading are logged by Mojang.

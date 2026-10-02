@@ -31,7 +31,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class OpenPlayer extends CraftPlayer {
 
@@ -76,7 +80,8 @@ public class OpenPlayer extends CraftPlayer {
     public void loadData() {
         // See CraftPlayer#loadData
         ServerPlayer serverPlayer = getHandle();
-        CompoundTag loaded = this.server.getHandle().playerIo.load(serverPlayer);
+        // The server's own storage, never the hookable PlayerList.playerIo, so an offline edit always targets the main profile
+        CompoundTag loaded = this.server.getServer().playerDataStorage.load(serverPlayer);
         if (loaded != null) {
             serverPlayer.readAdditionalSaveData(loaded);
             serverPlayer.loadGameTypes(loaded);
@@ -88,9 +93,10 @@ public class OpenPlayer extends CraftPlayer {
         ServerPlayer player = this.getHandle();
         // See net.minecraft.world.level.storage.PlayerDataStorage#save(EntityHuman)
         try {
-            PlayerDataStorage worldNBTStorage = player.server.getPlayerList().playerIo;
+            PlayerDataStorage worldNBTStorage = player.server.playerDataStorage;
 
-            CompoundTag oldData = isOnline() ? null : worldNBTStorage.load(player);
+            // Read without applying: load(Player) would push the stored inventory back over the edit being saved
+            CompoundTag oldData = isOnline() ? null : readStoredTag(worldNBTStorage, player);
             CompoundTag playerData = getWritableTag(oldData);
             playerData = player.saveWithoutId(playerData);
             setExtraData(playerData);
@@ -100,6 +106,9 @@ public class OpenPlayer extends CraftPlayer {
                 revertSpecialValues(playerData, oldData);
             }
 
+            if (saveThroughStorageApi(worldNBTStorage, player.getUUID(), playerData)) {
+                return;
+            }
             File file = File.createTempFile(player.getStringUUID() + "-", ".dat", worldNBTStorage.getPlayerDir());
             NbtIo.writeCompressed(playerData, file);
             File file1 = new File(worldNBTStorage.getPlayerDir(), player.getStringUUID() + ".dat");
@@ -108,6 +117,41 @@ public class OpenPlayer extends CraftPlayer {
         } catch (Exception e) {
             LogManager.getLogger().warn("Failed to save player data for {}: {}", player.getScoreboardName(), e);
         }
+    }
+
+    // A storage with api() keeps profiles in a database (TrueOG Purpur); its get never touches the entity
+    private static @Nullable Object storageApi(@NotNull PlayerDataStorage storage) {
+        try {
+            Method api = storage.getClass().getMethod("api");
+            return api.invoke(storage);
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    private static @Nullable CompoundTag readStoredTag(@NotNull PlayerDataStorage storage, @NotNull ServerPlayer player) throws ReflectiveOperationException {
+        Object api = storageApi(storage);
+        if (api != null) {
+            Method get = api.getClass().getMethod("get", String.class, UUID.class);
+            return (CompoundTag) get.invoke(api, null, player.getUUID());
+        }
+        // CraftBukkit's file read, which does not apply the data to the entity
+        Method getPlayerData = storage.getClass().getMethod("getPlayerData", String.class);
+        return (CompoundTag) getPlayerData.invoke(storage, player.getStringUUID());
+    }
+
+    // True when the storage took the profile through its api(); false means the caller keeps the file layout
+    private static boolean saveThroughStorageApi(@NotNull PlayerDataStorage storage, @NotNull UUID uuid, @NotNull CompoundTag playerData) throws ReflectiveOperationException {
+        Object api = storageApi(storage);
+        if (api == null) {
+            return false;
+        }
+        Method saveAll = api.getClass().getMethod("saveAll", UUID.class, Map.class);
+        Object saved = saveAll.invoke(api, uuid, Collections.singletonMap(null, playerData));
+        if (!Boolean.TRUE.equals(saved)) {
+            LogManager.getLogger().warn("Player data storage refused the offline save of {}", uuid);
+        }
+        return true;
     }
 
     @Contract("null -> new")

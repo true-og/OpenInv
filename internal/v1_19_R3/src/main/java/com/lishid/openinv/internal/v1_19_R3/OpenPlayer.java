@@ -32,8 +32,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -91,12 +89,18 @@ public class OpenPlayer extends CraftPlayer {
     @Override
     public void saveData() {
         ServerPlayer player = this.getHandle();
+        // An offline save is a read-modify-write of the stored profile: hold the Utilities-OG player lock that MyWorlds and
+        // DiamondBank hold for theirs, so the two never interleave (no lock without that plugin, nothing else writes then)
+        boolean offline = !isOnline();
+        if (offline) {
+            UtilitiesLock.lock(player.getUUID());
+        }
         // See net.minecraft.world.level.storage.PlayerDataStorage#save(EntityHuman)
         try {
             PlayerDataStorage worldNBTStorage = player.server.playerDataStorage;
 
             // Read without applying: load(Player) would push the stored inventory back over the edit being saved
-            CompoundTag oldData = isOnline() ? null : readStoredTag(worldNBTStorage, player);
+            CompoundTag oldData = offline ? readStoredTag(worldNBTStorage, player) : null;
             CompoundTag playerData = getWritableTag(oldData);
             playerData = player.saveWithoutId(playerData);
             setExtraData(playerData);
@@ -116,41 +120,78 @@ public class OpenPlayer extends CraftPlayer {
             Util.safeReplaceFile(file1, file, file2);
         } catch (Exception e) {
             LogManager.getLogger().warn("Failed to save player data for {}: {}", player.getScoreboardName(), e);
+        } finally {
+            if (offline) {
+                UtilitiesLock.unlock(player.getUUID());
+            }
         }
     }
 
-    // A storage with api() keeps profiles in a database (TrueOG Purpur); its get never touches the entity
-    private static @Nullable Object storageApi(@NotNull PlayerDataStorage storage) {
+    // Utilities-OG's per player lock, reached by reflection so OpenInv needs no compile dependency on it
+    private static final class UtilitiesLock {
+        private static final Method LOCK;
+        private static final Method UNLOCK;
+
+        static {
+            Method lock = null;
+            Method unlock = null;
+            try {
+                Class<?> utilities = Class.forName("net.trueog.utilitiesog.UtilitiesOG", true, OpenPlayer.class.getClassLoader());
+                lock = utilities.getMethod("lockPlayerData", UUID.class);
+                unlock = utilities.getMethod("unlockPlayerData", UUID.class);
+            } catch (ReflectiveOperationException e) {
+                // Utilities-OG is not installed, offline edits are unsynchronized like on vanilla
+            }
+            LOCK = lock;
+            UNLOCK = unlock;
+        }
+
+        static void lock(UUID uuid) {
+            invoke(LOCK, uuid);
+        }
+
+        static void unlock(UUID uuid) {
+            invoke(UNLOCK, uuid);
+        }
+
+        private static void invoke(@Nullable Method method, UUID uuid) {
+            if (method == null) {
+                return;
+            }
+            try {
+                method.invoke(null, uuid);
+            } catch (ReflectiveOperationException e) {
+                LogManager.getLogger().warn("Utilities-OG player data lock failed for {}", uuid, e);
+            }
+        }
+    }
+
+    // A storage with saveCompoundTag(UUID, CompoundTag) keeps profiles in a database (TrueOG Purpur); its getPlayerData(UUID) never touches the entity
+    private static @Nullable Method storageSave(@NotNull PlayerDataStorage storage) {
         try {
-            Method api = storage.getClass().getMethod("api");
-            return api.invoke(storage);
-        } catch (ReflectiveOperationException e) {
+            return storage.getClass().getMethod("saveCompoundTag", UUID.class, CompoundTag.class);
+        } catch (NoSuchMethodException e) {
             return null;
         }
     }
 
     private static @Nullable CompoundTag readStoredTag(@NotNull PlayerDataStorage storage, @NotNull ServerPlayer player) throws ReflectiveOperationException {
-        Object api = storageApi(storage);
-        if (api != null) {
-            Method get = api.getClass().getMethod("get", String.class, UUID.class);
-            return (CompoundTag) get.invoke(api, null, player.getUUID());
+        if (storageSave(storage) != null) {
+            Method get = storage.getClass().getMethod("getPlayerData", UUID.class);
+            return (CompoundTag) get.invoke(storage, player.getUUID());
         }
         // CraftBukkit's file read, which does not apply the data to the entity
         Method getPlayerData = storage.getClass().getMethod("getPlayerData", String.class);
         return (CompoundTag) getPlayerData.invoke(storage, player.getStringUUID());
     }
 
-    // True when the storage took the profile through its api(); false means the caller keeps the file layout
+    // True when the storage took the profile itself (it logs a failed write); false means the caller keeps the file layout
     private static boolean saveThroughStorageApi(@NotNull PlayerDataStorage storage, @NotNull UUID uuid, @NotNull CompoundTag playerData) throws ReflectiveOperationException {
-        Object api = storageApi(storage);
-        if (api == null) {
+        Method save = storageSave(storage);
+        if (save == null) {
             return false;
         }
-        Method saveAll = api.getClass().getMethod("saveAll", UUID.class, Map.class);
-        Object saved = saveAll.invoke(api, uuid, Collections.singletonMap(null, playerData));
-        if (!Boolean.TRUE.equals(saved)) {
-            LogManager.getLogger().warn("Player data storage refused the offline save of {}", uuid);
-        }
+        save.invoke(storage, uuid, playerData);
         return true;
     }
 
@@ -174,6 +215,14 @@ public class OpenPlayer extends CraftPlayer {
         copyValue(oldData, newData, "bukkit", "lastPlayed", NumericTag.class);
         copyValue(oldData, newData, "Paper", "LastSeen", NumericTag.class);
         copyValue(oldData, newData, "Paper", "LastLogin", NumericTag.class);
+        // The persistent data container was captured when the inventory was opened; other plugins (MyWorlds nests its
+        // per-world profiles there) may have changed the stored one since, and this edit never touches it
+        Tag storedValues = oldData.get("BukkitValues");
+        if (storedValues != null) {
+            newData.put("BukkitValues", storedValues.copy());
+        } else {
+            newData.remove("BukkitValues");
+        }
     }
 
     private <T extends Tag> void copyValue(

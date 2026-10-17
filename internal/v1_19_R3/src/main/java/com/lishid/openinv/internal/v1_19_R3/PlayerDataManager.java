@@ -22,6 +22,7 @@ import com.lishid.openinv.internal.ISpecialInventory;
 import com.lishid.openinv.internal.OpenInventoryView;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.server.MinecraftServer;
@@ -120,6 +121,11 @@ public class PlayerDataManager implements IPlayerDataManager {
 
         if (loadedData == null) {
             // Exceptions with loading are logged by Mojang.
+            return null;
+        }
+        // A stored tag without a position is no profile, only data other plugins keep for a player who never joined
+        // (a MyWorlds inventory group, for example); editing it would turn it into a profile placed at 0,0,0.
+        if (!loadedData.contains("Pos", Tag.TAG_LIST)) {
             return null;
         }
 
